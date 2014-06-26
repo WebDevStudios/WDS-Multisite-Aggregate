@@ -28,12 +28,12 @@ Author URI: http://webdevstudios.com
 class WDS_Multisite_Aggregate {
 
 	function hooks() {
-		add_action('network_admin_menu', 'network_add_pages');
-		add_action( 'init', 'text_domain' );
+		add_action( 'network_admin_menu', array( $this, 'network_add_pages' ) );
+		add_action( 'init', array( $this, 'text_domain' ) );
 	}
 
 	function network_add_pages() {
-		add_submenu_page( 'settings.php', 'Sitewide Tags', 'Sitewide Tags', 'manage_options', 'sitewidetags', 'swt_manager' );
+		add_submenu_page( 'settings.php', 'Multisite Aggregate', 'Multisite Aggregate', 'manage_options', 'wds-multisite-aggregate', array( $this, 'admin_page' ) );
 	}
 
 	function text_domain() {
@@ -51,7 +51,7 @@ $WDS_Multisite_Aggregate->hooks();
 function sitewide_tags_update_options() {
 	global $wpdb, $current_site, $current_user, $wp_version;
 
-	$valid_nonce = isset($_REQUEST['_wpnonce']) ? wp_verify_nonce($_REQUEST['_wpnonce'], 'sitewidetags') : false;
+	$valid_nonce = isset($_REQUEST['_wpnonce']) ? wp_verify_nonce($_REQUEST['_wpnonce'], 'wds-multisite-aggregate') : false;
 	if ( !$valid_nonce )
 		return false;
 
@@ -97,7 +97,7 @@ function sitewide_tags_update_options() {
 			else
 				$url = network_admin_url( 'settings.php' );
 
-			wp_redirect( wp_nonce_url( $url , 'sitewidetags' ) . "&page=sitewidetags&action=populateblogs&c=$c&p=$p&all=$all" );
+			wp_redirect( wp_nonce_url( $url , 'wds-multisite-aggregate' ) . "&page=sitewidetags&action=populateblogs&c=$c&p=$p&all=$all" );
 			die();
 		}
 		wp_die( 'Finished importing posts into tags blogs!' );
@@ -181,7 +181,7 @@ function sitewide_tags_update_options() {
 	wp_redirect( add_query_arg( array( 'updated' => '1' ) ) );
 	exit;
 }
-if ( !empty( $_GET[ 'page' ] ) && $_GET[ 'page' ] == 'sitewidetags' )
+if ( !empty( $_GET[ 'page' ] ) && $_GET[ 'page' ] == 'wds-multisite-aggregate' )
 	add_action( 'admin_init', 'sitewide_tags_update_options' );
 /*
 run populate function in local blog context because get_permalink does not produce the correct permalinks while switched

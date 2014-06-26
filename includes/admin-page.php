@@ -6,7 +6,7 @@
 	echo '<h2>' . __( 'Global Tags', 'wds-multisite-aggregate' ) . '</h2>';
 	echo '<form name="global_tags" action="" method="post">';
 	echo '<input type="hidden" name="action" value="sitewidetags" />';
-	wp_nonce_field('sitewidetags');
+	wp_nonce_field('wds-multisite-aggregate');
 	if( get_sitewide_tags_option( 'tags_blog_public' ) === null )
 		add_site_option( 'sitewide_tags_blog', array( 'tags_blog_public' => 1 ) );
 
@@ -91,9 +91,9 @@
 	</form>
 	<?php
 	echo '<form name="global_tags" action="" method="GET">';
-	echo "<input type='hidden' name='page' value='sitewidetags' />";
+	echo "<input type='hidden' name='page' value='wds-multisite-aggregate' />";
 	echo "<input type='hidden' name='action' value='populateblogs' />";
-	wp_nonce_field('sitewidetags');
+	wp_nonce_field('wds-multisite-aggregate');
 	?>
 	<table class="form-table">
 		<tr valign="top">
