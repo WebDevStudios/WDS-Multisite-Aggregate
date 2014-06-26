@@ -25,26 +25,30 @@ Author URI: http://webdevstudios.com
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+
+/**
+ * Autoloads files with classes when needed
+ * @since  1.0.0
+ * @param  string $class_name Name of the class being requested
+ */
+function wds_ma_autoload_classes( $class_name ) {
+	if ( class_exists( $class_name, false ) ) {
+		return;
+	}
+
+	$file = dirname( __FILE__ ) .'/includes/'. $class_name .'.php';
+	if ( file_exists( $file ) ) {
+		@include_once( $file );
+	}
+}
+spl_autoload_register( 'wds_ma_autoload_classes' );
+
 class WDS_Multisite_Aggregate {
 
 	public function __construct() {
-		spl_autoload_register( array( $this, 'autoload_classes' ) );
-
 		$this->admin = new WDS_Multisite_Aggregate_Admin();
 		$this->admin->hooks();
 		$this->options = new WDS_Multisite_Aggregate_Options();
-	}
-
-	public function autoload_classes( $classname ) {
-		if ( class_exists( $class_name, false ) )
-			return;
-		// for PHP versions < 5.3
-		$dir = dirname( __FILE__ );
-
-		$file = "$dir/includes/$class_name.php";
-		if ( file_exists( $file ) ) {
-			@include_once( $file );
-		}
 	}
 
 	function hooks() {

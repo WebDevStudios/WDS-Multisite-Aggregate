@@ -1,5 +1,7 @@
 <div class="wrap">
 	<?php
+	global $WDS_Multisite_Aggregate;
+	$options = $WDS_Multisite_Aggregate->options;
 	if( !empty( $_REQUEST['updated'] ) && '1' == $_REQUEST['updated'] )
 		echo '<div id="message" class="updated fade"><p><strong>' . __( 'Settings updated.', 'wpmu-mu-sitewide-tags' ) . '</strong></p></div>';
 
@@ -7,10 +9,10 @@
 	echo '<form name="global_tags" action="" method="post">';
 	echo '<input type="hidden" name="action" value="sitewidetags" />';
 	wp_nonce_field('wds-multisite-aggregate');
-	if( get_sitewide_tags_option( 'tags_blog_public' ) === null )
+	if( $options->get( 'tags_blog_public' ) === null )
 		add_site_option( 'sitewide_tags_blog', array( 'tags_blog_public' => 1 ) );
 
-	$tags_blog_enable = get_sitewide_tags_option( 'tags_blog_enabled' );
+	$tags_blog_enable = $options->get( 'tags_blog_enabled' );
 	?>
 	<table class="form-table">
 		<tr valign="top">
@@ -25,23 +27,23 @@
 			</div>";
 		return false;
 	}
-	$tags_blog_public = get_sitewide_tags_option( 'tags_blog_public' );
-	$tags_blog_pages = get_sitewide_tags_option( 'tags_blog_pages' );
-	$tags_blog_thumbs = get_sitewide_tags_option( 'tags_blog_thumbs' );
-	$tags_blog_pub_check = get_sitewide_tags_option( 'tags_blog_pub_check' );
-	$tags_blog_postmeta = get_sitewide_tags_option( 'tags_blog_postmeta' );
+	$tags_blog_public = $options->get( 'tags_blog_public' );
+	$tags_blog_pages = $options->get( 'tags_blog_pages' );
+	$tags_blog_thumbs = $options->get( 'tags_blog_thumbs' );
+	$tags_blog_pub_check = $options->get( 'tags_blog_pub_check' );
+	$tags_blog_postmeta = $options->get( 'tags_blog_postmeta' );
 	?>
 	<p><?php _e( "You can create your post archive in a specific 'tags' blog of your choosing, or you can use the main blog of your site. Each has it's own pros and cons.","wpmu-sitewide-tags"); ?></p>
-	<ol><li><input name="tags_blog" type="text" id="tags_blog" style="width: 35%" value="<?php echo esc_attr( get_sitewide_tags_option( 'tags_blog', 'tags' ) ); ?>" size="45" /><br />
+	<ol><li><input name="tags_blog" type="text" id="tags_blog" style="width: 35%" value="<?php echo esc_attr( $options->get( 'tags_blog', 'tags' ) ); ?>" size="45" /><br />
 	<?php _e('<strong>Blogname</strong> of the blog your global tags and posts will live in. Blog will be created.','wds-multisite-aggregate') ?></li>
-	<li><label><input name="tags_blog_main_blog" type="checkbox" id="tags_blog_main_blog" value="1" <?php if( get_sitewide_tags_option( 'tags_blog_main_blog', 0 ) == 1 ) { echo "checked='checked'"; } ?> /> <strong><?php _e( "Post to main blog","wpmu-sitewide-tags" ); ?></strong></label><br />
+	<li><label><input name="tags_blog_main_blog" type="checkbox" id="tags_blog_main_blog" value="1" <?php if( $options->get( 'tags_blog_main_blog', 0 ) == 1 ) { echo "checked='checked'"; } ?> /> <strong><?php _e( "Post to main blog","wpmu-sitewide-tags" ); ?></strong></label><br />
 	<?php _e('Create posts in your main blog. All posts will appear on the front page of your site. Remember to to add a post loop to home.php in the theme directory if it exists.','wds-multisite-aggregate') ?></li></ol>
 			</td>
 		</tr>
 		<tr valign="top">
 			<th scope="row"><?php _e('Max Posts','wds-multisite-aggregate') ?></th>
 			<td>
-				<input name="tags_max_posts" type="text" id="tags_max_posts" style="width: 15%" value="<?php echo intval( get_sitewide_tags_option( 'tags_max_posts', 5000 ) ); ?>" size="5" />
+				<input name="tags_max_posts" type="text" id="tags_max_posts" style="width: 15%" value="<?php echo intval( $options->get( 'tags_max_posts', 5000 ) ); ?>" size="5" />
 				<br />
 				<?php _e('The maximum number of posts stored in the tags blog.','wds-multisite-aggregate') ?>
 			</td>
