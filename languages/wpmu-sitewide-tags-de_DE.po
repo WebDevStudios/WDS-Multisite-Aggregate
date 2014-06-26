@@ -1,0 +1,85 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: WPMU Sitewide Tags\n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: 2008-09-05 23:13+0100\n"
+"Last-Translator: Thomas Schneider\n"
+"Language-Team: Thomas Schneider www.im-web-gefunden.de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: German\n"
+"X-Poedit-Country: GERMANY\n"
+
+#: ../sitewide-tags.php:35
+msgid "Global Tags"
+msgstr "WPMU-weite Zusammenfassung"
+
+#: ../sitewide-tags.php:38
+msgid "Tags Blog"
+msgstr "Blog für die Zusammenfassung"
+
+#: ../sitewide-tags.php:40
+msgid "Enabled"
+msgstr "Aktiviert"
+
+#: ../sitewide-tags.php:41
+msgid "You can create your post archive in a specific 'tags' blog of your choosing, or you can use the main blog of your site. Each has it's own pros and cons."
+msgstr "Du kannst für die Zusammenfassung einen separaten Blog anlegen oder den Hauptblog benutzen. Jede Variante hat Vor- und Nachteile."
+
+#: ../sitewide-tags.php:43
+msgid "<strong>Blogname</strong> of the blog your global tags and posts will live in. Blog will be created."
+msgstr "<strong>Blogname</strong> des Blogs, in den alle Posts kopiert werden. Der Blog wird angelegt, wenn er nicht existiert."
+
+#: ../sitewide-tags.php:44
+msgid "Post to main blog"
+msgstr "Hauptblog verwenden"
+
+#: ../sitewide-tags.php:45
+msgid "Create posts in your main blog. All posts will appear on the front page of your site. Remember to to add a post loop to home.php in the theme directory if it exists."
+msgstr "Die Artikel werden in Deinen Hauptblog kopiert. Die Artikel können auf der Startseite der Webseite angezeigt werden. Nicht vergessen eine \"post loop\" in der Datei \"home.php\" anzulegen, wenn die Datei existiert."
+
+#: ../sitewide-tags.php:49
+msgid "Max Posts"
+msgstr "Maximale Anzahl von Artikeln"
+
+#: ../sitewide-tags.php:53
+msgid "The maximum number of posts stored in the tags blog."
+msgstr "Die maximale Anzahl von Artikeln im Zusammenfassungsblog."
+
+#: ../sitewide-tags.php:57
+msgid "Comments, Pings and Trackbacks"
+msgstr "Kommentare, Pings und Trackbacks"
+
+#: ../sitewide-tags.php:59
+msgid "Use same states as the original post used for comments, pings and trackbacks."
+msgstr "Der Status für Kommentare, Trackbacks und Pings soll der selbe sein wie beim Originalartikel"
+
+#: ../sitewide-tags.php:60
+msgid "All types of comments are closed for copied posts."
+msgstr "Alle Diskussionsformen sind bei den kopierten Beiträgen deaktiviert."
+
+#: ../sitewide-tags.php:62
+msgid "Which type of state for discussions should be used in the tags blog for copied posts?."
+msgstr "Welcher Status soll für Kommentare etc. im Zusammenfassungs-Blog benutzt werden?"
+
+#: ../sitewide-tags.php:66
+msgid "Privacy"
+msgstr "Privatsphäre"
+
+#: ../sitewide-tags.php:68
+msgid "Tags pages can be indexed by search engines."
+msgstr "Die Zusammenfassung wird von Suchmaschinen gesehen."
+
+#: ../sitewide-tags.php:69
+msgid "Tags pages will not be indexed by search engines."
+msgstr "Die Zusammenfassung wird von Suchmaschinen nicht im Index aufgenommen."
+
+#: ../sitewide-tags.php:71
+msgid "Will your tags pages be visible to Google and other search engines?"
+msgstr "Soll die zusammenfassung für Suchmaschienen wie Google sichtbar sein?"
+
+#: ../sitewide-tags.php:105
+msgid "Global Posts"
+msgstr "Zusammenfassung"
+
