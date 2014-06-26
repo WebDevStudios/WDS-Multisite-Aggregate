@@ -2,10 +2,10 @@
 /*
 Plugin Name: WDS Multisite Aggregate
 Plugin URI: http://ocaoimh.ie/wordpress-mu-sitewide-tags/
-Description: Creates a blog where all the most recent posts on a WordPress network may be found.
+Description: Creates a blog where all the most recent posts on a WordPress network may be found. Based on WordPress MU Sitewide Tags Pages plugin by Donncha O Caoimh.
 Version: 0.4.2
-Author: Donncha O Caoimh
-Author URI: http://ocaoimh.ie/
+Author: WebDevStudios
+Author URI: http://webdevstudios.com
 */
 /*  Copyright 2008 Donncha O Caoimh (http://ocaoimh.ie/)
     With contributions by Ron Rennick(http://wpmututorials.com/), Thomas Schneider(http://www.im-web-gefunden.de/) and others.
@@ -25,139 +25,28 @@ Author URI: http://ocaoimh.ie/
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-function swt_add_pages() {
-	global $wpmu_version, $wp_version;
-	if ( version_compare( $wp_version, '3.0.9', '<=' ) && version_compare( $wp_version, '3.0', '>=' ) && is_multisite() && is_super_admin() ) {
-		add_submenu_page( 'ms-admin.php', 'Sitewide Tags', 'Sitewide Tags', 'manage_options', 'sitewidetags', 'swt_manager' );
-	} elseif ( isset( $wpmu_version ) && is_site_admin() ) {
-		add_submenu_page( 'wpmu-admin.php', 'Sitewide Tags', 'Sitewide Tags', 'manage_options', 'sitewidetags', 'swt_manager' );
+class WDS_Multisite_Aggregate {
+
+	function hooks() {
+		add_action('network_admin_menu', 'network_add_pages');
+		add_action( 'init', 'text_domain' );
+	}
+
+	function network_add_pages() {
+		add_submenu_page( 'settings.php', 'Sitewide Tags', 'Sitewide Tags', 'manage_options', 'sitewidetags', 'swt_manager' );
+	}
+
+	function text_domain() {
+		load_muplugin_textdomain( 'wds-multisite-aggregate', MUPLUGINDIR . '/languages' );
+	}
+
+	function admin_page() {
+		require_once( 'includes/admin-page.php' );
 	}
 }
-add_action('admin_menu', 'swt_add_pages');
 
-function swt_network_add_pages() {
-	add_submenu_page( 'settings.php', 'Sitewide Tags', 'Sitewide Tags', 'manage_options', 'sitewidetags', 'swt_manager' );
-}
-add_action('network_admin_menu', 'swt_network_add_pages');
-
-function swt_text_domain() {
-	load_muplugin_textdomain( 'wpmu-sitewide-tags', MUPLUGINDIR . '/languages' );
-}
-add_action( 'init', 'swt_text_domain' );
-
-function swt_manager() {
-	echo '<div class="wrap">';
-	if( !empty( $_REQUEST['updated'] ) && '1' == $_REQUEST['updated'] )
-		echo '<div id="message" class="updated fade"><p><strong>' . __( 'Settings updated.', 'wpmu-mu-sitewide-tags' ) . '</strong></p></div>';
-
-	echo '<h2>' . __( 'Global Tags', 'wpmu-sitewide-tags' ) . '</h2>';
-	echo '<form name="global_tags" action="" method="post">';
-	echo '<input type="hidden" name="action" value="sitewidetags" />';
-	wp_nonce_field('sitewidetags');
-	if( get_sitewide_tags_option( 'tags_blog_public' ) === null )
-		add_site_option( 'sitewide_tags_blog', array( 'tags_blog_public' => 1 ) );
-
-	$tags_blog_enable = get_sitewide_tags_option( 'tags_blog_enabled' );
-	?>
-	<table class="form-table">
-		<tr valign="top">
-			<th scope="row"><?php _e('Tags Blog','wpmu-sitewide-tags') ?></th>
-			<td>
-				<label><input name="tags_blog_enabled" type="checkbox" id="tags_blog_enabled" value="1" <?php if( $tags_blog_enable == 1 ) { echo "checked='checked'"; } ?> /> <strong><?php _e("Enabled","wpmu-sitewide-tags"); ?></strong></label><br />
-	<?php
-	if( !$tags_blog_enable ) {
-		echo "</td></tr></table>
-			<div class='submit'><input class='button-primary' type='submit' value='" . __( 'Update Settings', 'wpmu-mu-sitewide-tags' ) . "' /></div>
-			</form>
-			</div>";
-		return false;
-	}
-	$tags_blog_public = get_sitewide_tags_option( 'tags_blog_public' );
-	$tags_blog_pages = get_sitewide_tags_option( 'tags_blog_pages' );
-	$tags_blog_thumbs = get_sitewide_tags_option( 'tags_blog_thumbs' );
-	$tags_blog_pub_check = get_sitewide_tags_option( 'tags_blog_pub_check' );
-	$tags_blog_postmeta = get_sitewide_tags_option( 'tags_blog_postmeta' );
-	?>
-	<p><?php _e( "You can create your post archive in a specific 'tags' blog of your choosing, or you can use the main blog of your site. Each has it's own pros and cons.","wpmu-sitewide-tags"); ?></p>
-	<ol><li><input name="tags_blog" type="text" id="tags_blog" style="width: 35%" value="<?php echo esc_attr( get_sitewide_tags_option( 'tags_blog', 'tags' ) ); ?>" size="45" /><br />
-	<?php _e('<strong>Blogname</strong> of the blog your global tags and posts will live in. Blog will be created.','wpmu-sitewide-tags') ?></li>
-	<li><label><input name="tags_blog_main_blog" type="checkbox" id="tags_blog_main_blog" value="1" <?php if( get_sitewide_tags_option( 'tags_blog_main_blog', 0 ) == 1 ) { echo "checked='checked'"; } ?> /> <strong><?php _e( "Post to main blog","wpmu-sitewide-tags" ); ?></strong></label><br />
-	<?php _e('Create posts in your main blog. All posts will appear on the front page of your site. Remember to to add a post loop to home.php in the theme directory if it exists.','wpmu-sitewide-tags') ?></li></ol>
-			</td>
-		</tr>
-		<tr valign="top">
-			<th scope="row"><?php _e('Max Posts','wpmu-sitewide-tags') ?></th>
-			<td>
-				<input name="tags_max_posts" type="text" id="tags_max_posts" style="width: 15%" value="<?php echo intval( get_sitewide_tags_option( 'tags_max_posts', 5000 ) ); ?>" size="5" />
-				<br />
-				<?php _e('The maximum number of posts stored in the tags blog.','wpmu-sitewide-tags') ?>
-			</td>
-		</tr>
-		<tr valign="top">
-			<th scope="row"><?php _e('Include Pages','wpmu-sitewide-tags') ?></th>
-			<td>
-				<label><input name="tags_blog_pages" type="checkbox" id="tags_blog_pages" value="1" <?php if( $tags_blog_pages == 1 ) { echo "checked='checked'"; } ?> /> <strong><?php _e("Enabled","wpmu-sitewide-tags"); ?></strong></label><br />
-			</td>
-		</tr>
-		<tr valign="top">
-			<th scope="row"><?php _e('Include Post Thumbnails','wpmu-sitewide-tags') ?></th>
-			<td>
-				<label><input name="tags_blog_thumbs" type="checkbox" id="tags_blog_thumbs" value="1" <?php if( $tags_blog_thumbs == 1 ) { echo "checked='checked'"; } ?> /> <strong><?php _e("Enabled","wpmu-sitewide-tags"); ?></strong></label><br />
-			</td>
-		</tr>
-		<tr valign="top">
-			<th scope="row"><?php _e('Privacy','wpmu-sitewide-tags') ?></th>
-			<td>
-				<label><input type='radio' name='tags_blog_public' value='1' <?php echo ( $tags_blog_public == 1 ? 'checked="checked"' : '' ) ?> /> <?php _e('Tags pages can be indexed by search engines.','wpmu-sitewide-tags')?></label><br />
-				<label><input type='radio' name='tags_blog_public' value='0' <?php echo ( $tags_blog_public == 0 ? 'checked="checked"' : '' ) ?> /> <?php _e('Tags pages will not be indexed by search engines.','wpmu-sitewide-tags')?></label>
-				<br />
-				<?php _e('Will your tags pages be visible to Google and other search engines?','wpmu-sitewide-tags');
-		if( $tags_blog_public == 1 ) { ?>
-				<input name="tags_blog_pub_check" type="hidden" value="0" />
-<?php } else { ?>
-			</td>
-		</tr>
-		<tr valign="top">
-			<th scope="row"><?php _e('Non-Public Blogs','wpmu-sitewide-tags') ?></th>
-			<td>
-				<label><input name="tags_blog_pub_check" type="checkbox" id="tags_blog_pub_check" value="1" <?php if( $tags_blog_pub_check == 1 ) { echo "checked='checked'"; } ?> /> <strong><?php _e("Enabled","wpmu-sitewide-tags"); ?></strong></label><br />
-				<?php _e('Include posts from blogs not indexed by search engines.','wpmu-sitewide-tags');
-		} ?>
-			</td>
-			<tr valign="top">
-				<th scope="row"><?php _e('Post Meta') ?></th>
-				<td>
-					<textarea name="tags_blog_postmeta" id="tags_blog_postmeta" cols='40' rows='5'><?php echo $tags_blog_postmeta == '' ? '' : @implode( "\n", $tags_blog_postmeta ); ?></textarea>
-					<br />
-					<?php _e('If you want to copy custom fields with posts. One custom field per line.') ?>
-				</td>
-			</tr>
-		</tr>
-	</table>
-	<div class='submit'><input class='button-primary' type='submit' value='<?php _e( 'Update Settings', 'wpmu-mu-sitewide-tags' ) ?>' /></div>
-	</form>
-	<?php
-	echo '<form name="global_tags" action="" method="GET">';
-	echo "<input type='hidden' name='page' value='sitewidetags' />";
-	echo "<input type='hidden' name='action' value='populateblogs' />";
-	wp_nonce_field('sitewidetags');
-	?>
-	<table class="form-table">
-		<tr valign="top">
-			<th scope="row"><?php _e('Populate Posts','wpmu-sitewide-tags') ?></th>
-			<td>
-				<?php printf( __( 'Blog ID: %s <strong>OR</strong>', 'wpmu-sitewide-tags' ), '<input name="populate_blog" type="text" id="populate_blog" style="width: 15%" value="" size="5" />' ); ?><br />
-				<input name="populate_all_blogs" type="checkbox" id="populate_all_blogs" value="1" /> <?php _e( 'All blogs', 'wpmu-sitewide-tags' ); ?><br />
-				<?php _e( 'Add posts from the blog named above or all blogs to the sitewide tags blog. This page will reload while copying the posts and may take a long time to finish.', 'wpmu-sitewide-tags' ) ?><br />
-				<strong><em><?php _e( 'Note: Depending on your server resources, you may need to turn off other plugins while using the populate feature.', 'wpmu-sitewide-tags' ) ?></em></strong>
-			</td>
-		</tr>
-	</table>
-	<div class='submit'><input class='button-primary' type='submit' value='<?php _e( 'Poplate Posts', 'wpmu-mu-sitewide-tags' ) ?>' /></div>
-	</form>
-	</div>
-	<?php
-}
+$WDS_Multisite_Aggregate = new WDS_Multisite_Aggregate();
+$WDS_Multisite_Aggregate->hooks();
 
 function sitewide_tags_update_options() {
 	global $wpdb, $current_site, $current_user, $wp_version;
@@ -250,7 +139,7 @@ function sitewide_tags_update_options() {
 				update_sitewide_tags_option( 'tags_blog_id', $tags_blog_id );
 			} else {
 				$wpdb->hide_errors();
-				$id = wpmu_create_blog( $domain, $path, __( 'Global Posts','wpmu-sitewide-tags' ), $current_user->id , array( "public" => $_POST[ 'tags_blog_public' ] ), $current_site->id);
+				$id = wpmu_create_blog( $domain, $path, __( 'Global Posts','wds-multisite-aggregate' ), $current_user->id , array( "public" => $_POST[ 'tags_blog_public' ] ), $current_site->id);
 				update_sitewide_tags_option( 'tags_blog_id', $id );
 				$wpdb->show_errors();
 			}
