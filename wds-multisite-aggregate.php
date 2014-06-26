@@ -52,7 +52,7 @@ class WDS_Multisite_Aggregate {
 	}
 
 	function hooks() {
-		add_action('save_post', array( $this, 'do_post_sync' ), 10, 2);
+		add_action( 'save_post', array( $this, 'do_post_sync' ), 10, 2 );
 		add_action( 'trash_post', array( $this, 'sync_post_delete' ) );
 		add_action( 'delete_post', array( $this, 'sync_post_delete' ) );
 
@@ -65,21 +65,21 @@ class WDS_Multisite_Aggregate {
 		}
 
 		/* complete blog actions ($blog_id != 0) */
-		add_action('delete_blog', array( $this, 'remove_sync_posts' ), 10, 1);
-		add_action('archive_blog', array( $this, 'remove_sync_posts' ), 10, 1);
-		add_action('deactivate_blog', array( $this, 'remove_sync_posts' ), 10, 1);
-		add_action('make_spam_blog', array( $this, 'remove_sync_posts' ), 10, 1);
-		add_action('mature_blog', array( $this, 'remove_sync_posts' ), 10, 1);
+		add_action( 'delete_blog', array( $this, 'remove_sync_posts' ), 10, 1 );
+		add_action( 'archive_blog', array( $this, 'remove_sync_posts' ), 10, 1 );
+		add_action( 'deactivate_blog', array( $this, 'remove_sync_posts' ), 10, 1 );
+		add_action( 'make_spam_blog', array( $this, 'remove_sync_posts' ), 10, 1 );
+		add_action( 'mature_blog', array( $this, 'remove_sync_posts' ), 10, 1 );
 		/* single post actions ($blog_id == 0) */
 		add_action("transition_post_status", array( $this, 'remove_sync_posts' ));
 
-		add_action('update_option_blog_public', array( $this, 'public_blog_update' ), 10, 2);
+		add_action( 'update_option_blog_public', array( $this, 'public_blog_update' ), 10, 2 );
 
 		add_filter( 'post_link', array( $this, 'post_link' ), 10, 2 );
 		add_filter( 'page_link', array( $this, 'post_link' ), 10, 2 );
 
 		add_filter( 'sitewide_tags_allowed_post_types', array( $this, 'pages_filter' ) );
-		add_filter('post_thumbnail_html', array( $this, 'thumbnail_link' ), 10, 2);
+		add_filter( 'post_thumbnail_html', array( $this, 'thumbnail_link' ), 10, 2 );
 	}
 
 	function update_options() {
