@@ -83,7 +83,7 @@ class WDS_Multisite_Aggregate_Options {
 					$this->update( 'tags_blog_id', $tags_blog_id );
 				} else {
 					$wpdb->hide_errors();
-					$id = wpmu_create_blog( $domain, $path, __( 'Network Posts','wds-multisite-aggregate' ), $current_user->id , array( "public" => $_POST['tags_blog_public'] ), $current_site->id);
+					$id = wpmu_create_blog( $domain, $path, __( 'Network Posts', 'wds-multisite-aggregate' ), $current_user->id , array( 'public' => $_POST['tags_blog_public'] ), $current_site->id);
 					$this->update( 'tags_blog_id', $id );
 					$wpdb->show_errors();
 				}
