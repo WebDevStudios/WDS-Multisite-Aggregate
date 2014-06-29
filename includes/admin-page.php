@@ -27,11 +27,11 @@
 				</div>";
 			return false;
 		}
-		$tags_blog_public = $options->get( 'tags_blog_public' );
-		$tags_blog_pages = $options->get( 'tags_blog_pages' );
-		$tags_blog_thumbs = $options->get( 'tags_blog_thumbs' );
+		$tags_blog_public    = $options->get( 'tags_blog_public' );
+		$tags_blog_pages     = $options->get( 'tags_blog_pages' );
+		$tags_blog_thumbs    = $options->get( 'tags_blog_thumbs' );
 		$tags_blog_pub_check = $options->get( 'tags_blog_pub_check' );
-		$tags_blog_postmeta = $options->get( 'tags_blog_postmeta' );
+		$tags_blog_postmeta  = $options->get( 'tags_blog_postmeta' );
 		?>
 		<p class="description"><?php _e( "You can create your post archive in a specific 'tags' blog of your choosing, or you can use the main blog of your site. Each has it's own pros and cons.","wpmu-sitewide-tags"); ?></p>
 		<ol><li><p><input name="tags_blog" type="text" id="tags_blog" style="width: 35%" value="<?php echo esc_attr( $options->get( 'tags_blog', 'Network Posts' ) ); ?>" size="45" /></p>
@@ -109,4 +109,3 @@
 		<div class='submit'><input class='button-primary' type='submit' value='<?php _e( 'Populate Posts', 'wpmu-mu-sitewide-tags' ) ?>' /></div>
 	</form>
 </div>
-<?php

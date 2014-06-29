@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * Handles filtering aggregate site's posts on the front-end
+ *
+ * @since  1.0.0
+ */
 class WDS_Multisite_Aggregate_Frontend {
 
 	public function __construct( WDS_Multisite_Aggregate_Options $options ) {

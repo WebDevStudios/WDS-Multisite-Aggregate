@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * Handles setting up the admin page for the Aggregate site settings
+ *
+ * @since  1.0.0
+ */
 class WDS_Multisite_Aggregate_Admin {
 
 	public function __construct( WDS_Multisite_Aggregate_Options $options ) {

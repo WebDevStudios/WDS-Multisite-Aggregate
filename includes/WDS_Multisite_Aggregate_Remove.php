@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * Handles removing posts from aggregate site when a site is removed or made private
+ *
+ * @since  1.0.0
+ */
 class WDS_Multisite_Aggregate_Remove {
 
 	public function __construct( WDS_Multisite_Aggregate_Options $options ) {

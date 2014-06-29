@@ -1,22 +1,24 @@
-=== WordPress MU Sitewide Tags Pages ===
-Contributors: donncha, imwebgefunden, wpmuguru
+=== WDS Multisite Aggregate ===
+Contributors: donncha, imwebgefunden, wpmuguru, WebDevStudios
 Tags: wordpressmu
 Tested up to: 3.8.1
-Stable tag: 0.4.2
+Stable tag: 1.0.0
 Requires at least: 3.0
 
-A central area where all the posts on a WordPress MU or WordPress MS site can be collected.
+A central area where all the posts on a WordPress MS network can be collected.
 
 == Description ==
-This plugin creates a new blog on your server for all the posts on your site, much like http://wordpress.com/tags/
+Creates a new site where all the most recent posts/pages/etc on a WordPress network may be collected (much like http://wordpress.com/tags/).
 
 For performance reasons the number of posts is limited to a user configurable amount, and the blog itself can be made indexable by search engines or not.
+
+Based on WordPress MU Sitewide Tags Pages plugin by Donncha O Caoimh.
 
 == Install ==
 1. Install in your plugins directory in the usual way and network activate the plugin. There is no need to put it in mu-plugins.
 2. Login as a site administrator and go to Super Admin->Sitewide Tags.
-	1. "Tags blog" defaults to "tags" but can be anything. This is the blog where your sitewide posts will live. It will be created if it doesn't exist.
-	2. Check "Post to main blog" to use your main blog as the tags blog.
+	1. Aggregate site defaults to "Network Posts" but can be anything. This is the blog where your sitewide posts will live. It will be created if it doesn't exist.
+	2. Check "Post to main blog" to use your main blog as the aggregate blog.
 	3. "Max posts" defaults to 5000. Older posts will be deleted if this threshold is broken.
 	4. Check "Include Pages" to include both posts and pages, handy for making a sitewide search.
 	5. "Privacy" defaults to public, pages can be indexed by search engines.
@@ -25,6 +27,9 @@ For performance reasons the number of posts is limited to a user configurable am
 	8. "Populate Posts" allows you to fill in posts from an existing blog.
 
 == Changelog ==
+
+= 1.0.0 =
+* Forked from 'MU Sitewide Tags' and rewritten with OOP principles, WordPress coding standards, and extensibility in mind.
 
 = 0.4.2 =
 * duplicate category fix

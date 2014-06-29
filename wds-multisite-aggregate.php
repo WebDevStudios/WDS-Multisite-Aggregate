@@ -3,7 +3,7 @@
 Plugin Name: WDS Multisite Aggregate
 Plugin URI: http://ocaoimh.ie/wordpress-mu-sitewide-tags/
 Description: Creates a blog where all the most recent posts on a WordPress network may be found. Based on WordPress MU Sitewide Tags Pages plugin by Donncha O Caoimh.
-Version: 0.4.2
+Version: 1.0.0
 Author: WebDevStudios
 Author URI: http://webdevstudios.com
 */
@@ -43,6 +43,11 @@ function wds_ma_autoload_classes( $class_name ) {
 }
 spl_autoload_register( 'wds_ma_autoload_classes' );
 
+/**
+ * Get it started
+ *
+ * @since  1.0.0
+ */
 class WDS_Multisite_Aggregate {
 
 	public function __construct() {

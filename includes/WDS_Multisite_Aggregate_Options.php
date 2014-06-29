@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * Settings handler
+ *
+ * @since  1.0.0
+ */
 class WDS_Multisite_Aggregate_Options {
 
 	function get( $key, $default = false ) {
