@@ -101,12 +101,12 @@
 				<th scope="row"><?php _e('Populate Posts','wds-multisite-aggregate') ?></th>
 				<td>
 					<p><label><?php printf( __( 'Blog ID: %s <strong>OR</strong>', 'wds-multisite-aggregate' ), '<input name="blog_to_populate" type="text" id="blog_to_populate" style="width: 15%" value="" size="5" /></label><label>' ); ?>&nbsp;&nbsp;<input name="populate_all_blogs" type="checkbox" id="populate_all_blogs" value="1" />&nbsp;<?php _e( 'All blogs', 'wds-multisite-aggregate' ); ?></label></p>
-					<p><?php _e( 'Add posts from the blog named above or all blogs to the sitewide tags blog. This page will reload while copying the posts and may take a long time to finish.', 'wds-multisite-aggregate' ) ?><</p>
+					<p><?php _e( 'Add posts from the blog named above or all blogs to the sitewide tags blog. This page will reload while copying the posts and may take a long time to finish.', 'wds-multisite-aggregate' ) ?></p>
 					<p><strong><em><?php _e( 'Note: Depending on your server resources, you may need to turn off other plugins while using the populate feature.', 'wds-multisite-aggregate' ) ?></em></strong></p>
 				</td>
 			</tr>
 		</table>
-		<div class='submit'><input class='button-primary' type='submit' value='<?php _e( 'Poplate Posts', 'wpmu-mu-sitewide-tags' ) ?>' /></div>
+		<div class='submit'><input class='button-primary' type='submit' value='<?php _e( 'Populate Posts', 'wpmu-mu-sitewide-tags' ) ?>' /></div>
 	</form>
 </div>
 <?php

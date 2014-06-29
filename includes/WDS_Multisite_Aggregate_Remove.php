@@ -44,7 +44,7 @@ class WDS_Multisite_Aggregate_Remove {
 		}
 
 		if ( $new == 0 ) {
-			$this->remove->remove_blogs_posts( $wpdb->blogid );
+			$this->remove_blogs_posts( $wpdb->blogid );
 		}
 	}
 

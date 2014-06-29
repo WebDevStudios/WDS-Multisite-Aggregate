@@ -38,14 +38,14 @@ class WDS_Multisite_Aggregate_Options {
 	}
 
 	function pages_filter( $post_types ) {
-		if ( $this->options->get( 'tags_blog_pages' ) ) {
+		if ( $this->get( 'tags_blog_pages' ) ) {
 			$post_types = array_merge( $post_types, array( 'page' => true ) );
 		}
 		return $post_types;
 	}
 
 	function update_options() {
-		global $wpdb, $current_site, $current_user, $wp_version;
+		global $wpdb, $current_site, $wp_version;
 
 		if ( ! isset( $_POST['tags_blog_enabled'] ) || !$_POST['tags_blog_enabled'] ) {
 			if ( $this->get( 'tags_blog_enabled' ) != $_POST['tags_blog_enabled'] )
@@ -56,7 +56,7 @@ class WDS_Multisite_Aggregate_Options {
 		$this->update( 'tags_blog_enabled', 1 );
 
 		if ( ( isset( $_POST['tags_blog'] ) || isset( $_POST['tags_blog_main_blog'] ) ) && isset( $_POST['tags_blog_public'] ) ) {
-			if ( $_POST['tags_blog_main_blog'] == 1 ) {
+			if ( isset( $_POST['tags_blog_main_blog'] ) && 1 == $_POST['tags_blog_main_blog'] ) {
 				if ( $current_site->blog_id )
 					$id = $current_site->blog_id;
 				else
@@ -69,57 +69,62 @@ class WDS_Multisite_Aggregate_Options {
 				}
 			} else {
 				$this->update( 'tags_blog_main_blog', 0 );
-				$tags_blog = $_POST['tags_blog'];
-				$this->update( 'tags_blog', $tags_blog );
+				$aggregate_blog = sanitize_title( $_POST['tags_blog'] );
+				$this->update( 'tags_blog', $aggregate_blog );
 				if ( constant( 'VHOST' ) == 'yes' ) {
-					$domain = $tags_blog . '.' . $current_site->domain;
+					$domain = $aggregate_blog . '.' . $current_site->domain;
 					$path = $current_site->path;
 				} else {
 					$domain = $current_site->domain;
-					$path = trailingslashit( $current_site->path . $tags_blog );
+					$path = trailingslashit( $current_site->path . $aggregate_blog );
 				}
-				$tags_blog_id = $wpdb->get_var( "SELECT blog_id FROM {$wpdb->blogs} WHERE domain = '$domain' AND path = '$path'" );
-				if ( $tags_blog_id ) {
-					$this->update( 'tags_blog_id', $tags_blog_id );
+				$aggregate_blog_id = $wpdb->get_var( "SELECT blog_id FROM {$wpdb->blogs} WHERE domain = '$domain' AND path = '$path'" );
+				if ( $aggregate_blog_id ) {
+					$this->update( 'tags_blog_id', $aggregate_blog_id );
 				} else {
 					$wpdb->hide_errors();
-					$id = wpmu_create_blog( $domain, $path, __( 'Network Posts', 'wds-multisite-aggregate' ), $current_user->id , array( 'public' => $_POST['tags_blog_public'] ), $current_site->id);
+					$id = wpmu_create_blog( $domain, $path, __( 'Network Posts', 'wds-multisite-aggregate' ), get_current_user_id() , array( 'public' => $_POST['tags_blog_public'] ), $current_site->id);
 					$this->update( 'tags_blog_id', $id );
 					$wpdb->show_errors();
 				}
 			}
-			$tags_blog_public = (int) $_POST['tags_blog_public'];
-			$this->update( 'tags_blog_public', $tags_blog_public );
-			update_blog_option( $tags_blog_id, 'blog_public', $tags_blog_public );
-			update_blog_status( $tags_blog_id, 'public', $tags_blog_public);
+			$aggregate_blog_public = (int) $_POST['tags_blog_public'];
+			$this->update( 'tags_blog_public', $aggregate_blog_public );
+			update_blog_option( $aggregate_blog_id, 'blog_public', $aggregate_blog_public );
+			update_blog_status( $aggregate_blog_id, 'public', $aggregate_blog_public);
 		}
 
-		if ( isset( $_POST['tags_max_posts'] ) )
-			$this->update( 'tags_max_posts', (int) $_POST['tags_max_posts'] );
-
-		if ( isset( $_POST['tags_blog_pages'] ) && $this->get( 'tags_blog_pages' ) != $_POST['tags_blog_pages'] ) {
-			$this->update( 'tags_blog_pages', (int) $_POST['tags_blog_pages'] );
+		$options_as_integers = array(
+			'tags_max_posts',
+		);
+		foreach ( $options_as_integers as $option_key ) {
+			if ( $set = $this->make_integer_from_request( $option_key ) ) {
+				$this->update( $option_key, $set );
+			}
 		}
 
-		if ( isset( $_POST['tags_blog_thumbs'] ) && $this->get( 'tags_blog_thumbs' ) != $_POST['tags_blog_thumbs'] ) {
-			$this->update( 'tags_blog_thumbs', (int) $_POST['tags_blog_thumbs'] );
+		$options_as_integers_maybe_set = array(
+			'tags_blog_pages',
+			'tags_blog_thumbs',
+		);
+		foreach ( $options_as_integers_maybe_set as $option_key ) {
+
+			if ( ( $set = $this->make_integer_from_request( $option_key ) ) && $set != $this->get( $option_key ) ) {
+				$this->update( $option_key, $set );
+			}
+
 		}
 
-		if ( isset( $_POST['tags_blog_pub_check'] ) && $this->get( 'tags_blog_pub_check' ) != $_POST['tags_blog_pub_check'] ) {
-			if ( $tags_blog_public == 0 )
-				$this->update( 'tags_blog_pub_check', (int) $_POST['tags_blog_pub_check'] );
-			else
-				$this->update( 'tags_blog_pub_check', 0 );
+		if ( ( $set = $this->make_integer_from_request( 'tags_blog_pub_check' ) ) && $set != $this->get( 'tags_blog_pub_check' ) ) {
+			$set = $aggregate_blog_public == 0 ? $set : 0;
+			$this->update( 'tags_blog_pub_check', $set );
 		}
 
 		if ( isset( $_POST['tags_blog_postmeta'] ) && '' != $_POST['tags_blog_postmeta'] ) {
-			$meta_keys = split( "\n", stripslashes( $_POST['tags_blog_postmeta'] ) );
-			foreach( (array) $meta_keys as $key ) {
-				$keys[] = trim( $key );
-			}
-			$this->update( "tags_blog_postmeta", $keys );
+			$meta_keys = explode( "\n", strip_tags( stripslashes( $_POST['tags_blog_postmeta'] ) ) );
+			$this->update( 'tags_blog_postmeta', array_map( 'trim', $meta_keys ) );
 		} else {
-			$this->update( "tags_blog_postmeta", '' );
+			$this->update( 'tags_blog_postmeta', '' );
 		}
 
 		// force write if changes saved
@@ -128,4 +133,7 @@ class WDS_Multisite_Aggregate_Options {
 		exit;
 	}
 
+	function make_integer_from_request( $key ) {
+		return isset( $_REQUEST[ $key ] ) ? (int) $_REQUEST[ $key ] : 0;
+	}
 }

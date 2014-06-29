@@ -136,7 +136,7 @@ msgid ""
 msgstr ""
 
 #: sitewide-tags.php:156
-msgid "Poplate Posts"
+msgid "Populate Posts"
 msgstr ""
 
 #: sitewide-tags.php:253
