@@ -7,35 +7,40 @@
  */
 class WDS_Multisite_Aggregate_Options {
 
+	public $to_update = '1';
+	public $to_get = '1';
+
 	function get( $key, $default = false ) {
-		static $tags_options = '1';
-		if ( $tags_options == '1' ) {
-			$tags_options = get_site_option('sitewide_tags_blog');
+		if ( $this->to_get == '1' ) {
+			$this->to_get = get_site_option( 'sitewide_tags_blog' );
 		}
-		if ( is_array( $tags_options ) ) {
-			if ( $key == 'all' )
-				return $tags_options;
-			elseif ( isset( $tags_options[$key] ) )
-				return $tags_options[$key];
+		if ( is_array( $this->to_get ) ) {
+			if ( $key == 'all' ) {
+				return $this->to_get;
+			} elseif ( isset( $this->to_get[ $key ] ) ) {
+				return $this->to_get[ $key ];
+			}
 		}
-		return get_site_option($key, $default);
+		return get_site_option( $key, $default );
 	}
 
 	function update( $key, $value = '', $flush = false ) {
-		static $tags_options = '1';
-		if ( $tags_options == '1' ) {
+		if ( $this->to_update == '1' ) {
 			// don't save unless something has changed
-			if ( $key === true )
+			if ( $key === true ) {
 				return;
-			$tags_options = get_site_option('sitewide_tags_blog');
+			}
+			$this->to_update = get_site_option( 'sitewide_tags_blog' );
 		}
-		if ( !$tags_options ) {
-			$tags_options = array();
+		if ( !$this->to_update ) {
+			$this->to_update = array();
 		}
-		if ( $key !== true)
-			$tags_options[$key] = $value;
-		if ( $flush || $key === true )
-			return update_site_option( 'sitewide_tags_blog', $tags_options );
+		if ( $key !== true ) {
+			$this->to_update[ $key ] = $value;
+		}
+		if ( $flush || $key === true ) {
+			return update_site_option( 'sitewide_tags_blog', $this->to_update );
+		}
 	}
 
 	public function hooks() {
@@ -53,7 +58,7 @@ class WDS_Multisite_Aggregate_Options {
 		global $wpdb, $current_site, $wp_version;
 
 		if ( ! isset( $_POST['tags_blog_enabled'] ) || !$_POST['tags_blog_enabled'] ) {
-			if ( $this->get( 'tags_blog_enabled' ) != $_POST['tags_blog_enabled'] )
+			if ( isset( $_POST['tags_blog_enabled'] ) && $this->get( 'tags_blog_enabled' ) != $_POST['tags_blog_enabled'] )
 				$this->update( 'tags_blog_enabled', 0, true );
 			wp_redirect( add_query_arg( array( 'updated' => '1' ) ) );
 			exit;
@@ -109,12 +114,13 @@ class WDS_Multisite_Aggregate_Options {
 		}
 
 		$options_as_integers_maybe_set = array(
-			'tags_blog_pages',
 			'tags_blog_thumbs',
+			'tags_blog_pages',
+			'populate_all_blogs',
 		);
 		foreach ( $options_as_integers_maybe_set as $option_key ) {
-
-			if ( ( $set = $this->make_integer_from_request( $option_key ) ) && $set != $this->get( $option_key ) ) {
+			$set = $this->make_integer_from_request( $option_key );
+			if ( $set != $this->get( $option_key ) ) {
 				$this->update( $option_key, $set );
 			}
 
@@ -132,6 +138,9 @@ class WDS_Multisite_Aggregate_Options {
 			$this->update( 'tags_blog_postmeta', '' );
 		}
 
+		$blogs_to_import = $this->comma_delimited_to_array_from_request( 'blogs_to_import' );
+		$this->update( 'blogs_to_import', $blogs_to_import );
+
 		// force write if changes saved
 		$this->update( true );
 		wp_redirect( add_query_arg( array( 'updated' => '1' ) ) );
@@ -141,4 +150,22 @@ class WDS_Multisite_Aggregate_Options {
 	function make_integer_from_request( $key ) {
 		return isset( $_REQUEST[ $key ] ) ? (int) $_REQUEST[ $key ] : 0;
 	}
+
+	function comma_delimited_to_array_from_request( $key ) {
+		return isset( $_REQUEST[ $key ] ) ? $this->comma_delimited_to_array( $_REQUEST[ $key ] ) : array();
+	}
+
+	function comma_delimited_to_array( $string ) {
+		$array = (array) explode( ',', $string );
+		$array = array_map( 'trim', $array );
+		$array = array_map( array( $this, 'make_int' ), $array );
+		$array = array_filter( $array );
+		return $array;
+	}
+
+
+	function make_int( $item ) {
+		return (int) str_ireplace( ' ', '', $item );
+	}
+
 }
