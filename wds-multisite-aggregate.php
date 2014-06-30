@@ -50,6 +50,9 @@ spl_autoload_register( 'wds_ma_autoload_classes' );
  */
 class WDS_Multisite_Aggregate {
 
+	protected $imported = array();
+	protected $total_imported = 0;
+
 	public function __construct() {
 		// Options setter/getter and handles updating options on save
 		$this->options = new WDS_Multisite_Aggregate_Options();
@@ -80,6 +83,10 @@ class WDS_Multisite_Aggregate {
 	}
 
 	public function context_hooks() {
+		if ( isset( $_GET['total_imported'] ) ) {
+			add_action( 'all_admin_notices', array( $this, 'user_notice' ) );
+		}
+
 		$valid_nonce = isset( $_REQUEST['_wpnonce'] ) ? wp_verify_nonce( $_REQUEST['_wpnonce'], 'wds-multisite-aggregate' ) : false;
 
 		if ( !$valid_nonce ) {
@@ -87,7 +94,7 @@ class WDS_Multisite_Aggregate {
 		}
 
 		if ( isset( $_GET['action'] ) && 'populate_from_blogs' == $_GET['action'] ) {
-			$this->populate_from_blogs();
+			return $this->populate_from_blogs();
 		}
 
 		if ( ! empty( $_POST ) ) {
@@ -96,74 +103,83 @@ class WDS_Multisite_Aggregate {
 	}
 
 	function populate_from_blogs() {
-		$admin_url = add_query_arg( array( 'page' => 'wds-multisite-aggregate' ), network_admin_url( 'settings.php' ) );
+		global $wpdb;
 
-		$blog_count       = $this->options->make_integer_from_request( 'blog_count' );
-		$post_count       = $this->options->make_integer_from_request( 'post_count' );
-		$blog_to_populate = $this->options->make_integer_from_request( 'blog_to_populate' );
-		$all_blogs        = $this->options->make_integer_from_request( 'all_blogs' );
+		$this->total_imported = $this->options->make_integer_from_request( 'total_imported' );
+		$post_count           = $this->options->make_integer_from_request( 'post_count' );
 
-		if  ( 0 == $blog_to_populate && isset( $_GET['populate_all_blogs'] ) ) {
-			$all_blogs = 1;
-		}
+		// Check query string
+		$blogs_to_import      = $this->options->comma_delimited_to_array_from_request( 'blogs_to_import' );
+		// No query string? Check options
+		$blogs_to_import      = ! empty( $blogs_to_import ) ? $blogs_to_import : $this->get_blogs_to_import();
+
 
 		$tags_blog_id = $this->options->get( 'tags_blog_id' );
-		if ( !$tags_blog_id ) {
+		if ( !$tags_blog_id || empty( $blogs_to_import ) ) {
 			return false;
 		}
 
-		$blogs = $all_blogs
-			? $wpdb->get_col( $wpdb->prepare( "SELECT blog_id FROM $wpdb->blogs ORDER BY blog_id DESC LIMIT %d,5", $blog_count ) )
-			: array( $blog_to_populate );
+		$blog_to_populate = array_shift( $blogs_to_import );
 
-		foreach( $blogs as $blog ) {
-			if ( $blog != $tags_blog_id ) {
-				$details = get_blog_details( $blog );
-				$url = add_query_arg( array(
-					'post_count' => $post_count,
-					'action'     => 'populate_posts_from_blog',
-					'key'        => md5( serialize( $details ) )
-				), $details->siteurl );
-				$post_count = 0;
-				$_post_count = 0;
+		if ( $blog_to_populate != $tags_blog_id ) {
+			$this->imported = array();
 
-				$result = wp_remote_get( $url );
-				if ( isset( $result['body'] ) ) {
-					$_post_count = (int) $result['body'];
-				}
+			$details = get_blog_details( $blog_to_populate );
+			$url = add_query_arg( array(
+				'post_count' => $post_count,
+				'action'     => 'populate_posts_from_blog',
+				'key'        => md5( serialize( $details ) )
+			), $details->siteurl );
 
-				if ( $_post_count ) {
-					$post_count = $_post_count;
-					break;
+			$post_count  = 0;
+			$_post_count = 0;
+			$result      = wp_remote_get( $url );
+			$response    = wp_remote_retrieve_body( $result );
+
+			if ( $response ) {
+				$json = json_decode( $response );
+				$data = $json->success ? $json->data : false;
+				if ( $data ) {
+					$this->total_imported = $this->total_imported + count( $data->posts_imported );
+					$this->imported = (array) $data->posts_imported;
+					$_post_count = (int) $data->posts_done;
 				}
 			}
-			$blog_count++;
+
+			if ( $_post_count ) {
+				$post_count = $_post_count;
+			}
 		}
-		if ( !empty( $blogs ) && ( $all_blogs || $post_count ) ) {
+
+		if ( $post_count || ! empty( $blogs_to_import ) ) {
+
 			$url = network_admin_url( 'settings.php' );
-			$url = add_query_arg( array(
-				'page'       => 'wds-multisite-aggregate',
-				'action'     => 'populate_from_blogs',
-				'blog_count' => $blog_count,
-				'post_count' => $post_count,
-				'all_blogs'  => $all_blogs,
-			), wp_nonce_url( $url , 'wds-multisite-aggregate' ) );
+			$args = array(
+				'page'           => 'wds-multisite-aggregate',
+				'action'         => 'populate_from_blogs',
+				'post_count'     => $post_count,
+				'total_imported' => (int) $this->total_imported,
+				'next_blog'      => true,
+			);
+			if ( ! empty( $blogs_to_import ) ) {
+				$args['blogs_to_import'] = implode( ',', $blogs_to_import );
+			}
+			$url = add_query_arg( $args, wp_nonce_url( $url , 'wds-multisite-aggregate' ) );
 
-			wp_redirect( $url );
-			die();
+			$count = $this->strong_red( count( $this->imported ) );
+			$finished_blog = $this->strong_red( sprintf( __( 'Blog %d', 'wds-multisite-aggregate' ), (int) $blog_to_populate ), false );
+			$next_blog = $this->strong_red( sprintf( __( 'Blog %d', 'wds-multisite-aggregate' ), array_shift( $blogs_to_import ) ), false );
+
+			$msg = $this->heading( sprintf( __( 'Imported %s posts from %s', 'wds-multisite-aggregate' ), $count, $finished_blog ) );
+			$desc = $this->notice_description( sprintf( __( 'Please wait while posts from %s are imported.', 'wds-multisite-aggregate' ), $next_blog ) );
+
+			wp_die( $msg . $desc . $this->js_redirect( $url, 1 ) );
+
 		}
 
-		switch_to_blog( $this->options->get( 'tags_blog_id' ) );
-		$visit_url = esc_url( site_url() );
-		// JS to redirect to settings page after 3 seconds.
-		$js = '
-		<script type="text/javascript">
-			window.setTimeout( function() {
-				window.location.href = "'. $admin_url .'";
-			}, 3000 );
-		</script>
-		';
-		wp_die( sprintf( __( 'Finished importing posts! %s, or %s.', 'wpmu-mu-sitewide-tags' ), sprintf( '<a href="%s">%s</a>', $visit_url, __( 'Check them out', 'wpmu-mu-sitewide-tags' ) ), sprintf( '<a href="%s">%s</a>', $admin_url, __( 'Back to Settings', 'wpmu-mu-sitewide-tags' ) ) ) . $js );
+		wp_redirect( add_query_arg( array( 'total_imported' => $this->total_imported ), $this->admin->url() ) );
+		exit;
+
 	}
 
 	/**
@@ -174,23 +190,32 @@ class WDS_Multisite_Aggregate {
 
 		$valid_key = isset( $_REQUEST['key'] ) ? $_REQUEST['key'] == md5( serialize( get_blog_details( $wpdb->blogid ) ) ) : false;
 		if ( !$valid_key ) {
-			return false;
+			wp_send_json_error( 'not a valid key.' );
 		}
 
 		$tags_blog_id = $this->options->get( 'tags_blog_id' );
 		$tags_blog_enabled = $this->options->get( 'tags_blog_enabled' );
 
 		if ( !$tags_blog_enabled || !$tags_blog_id || $tags_blog_id == $wpdb->blogid ) {
-			exit( '0' );
+			wp_send_json_error( 'Aggregate blog not enabled OR there is no aggregate blog ID OR the current site IS the aggregate blog.' );
 		}
 
 		$posts_done = 0;
 		$post_count = isset( $_GET['post_count'] ) ? (int) $_GET['post_count'] : 0; // post count
 		while ( $posts_done < 300 ) {
-			$posts = $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM $wpdb->posts WHERE post_status = 'publish' LIMIT %d, 50", $post_count + $posts_done ) );
+			$args = array(
+				'fields'         => 'ids',
+				'offset'         => $post_count + $posts_done,
+				'posts_per_page' => 50,
+				'post_status'    =>  'publish',
+			);
+			$posts = get_posts( $args );
 
 			if ( empty( $posts ) ) {
-				exit( '0' );
+				wp_send_json_success( array(
+					'posts_done'     => 0,
+					'posts_imported' => $this->imported,
+				) );
 			}
 
 			foreach ( $posts as $post ) {
@@ -200,26 +225,38 @@ class WDS_Multisite_Aggregate {
 			}
 			$posts_done += 50;
 		}
+
+		wp_send_json_success( array(
+			'posts_done'     => $posts_done,
+			'posts_imported' => $this->imported,
+		) );
 		exit( $posts_done );
 	}
 
 	function do_post_sync( $post_id, $post ) {
 		global $wpdb;
 
-		if ( !$this->options->get( 'tags_blog_enabled' ) )
+		if ( !$this->options->get( 'tags_blog_enabled' ) ) {
 			return;
-
-		// wp_insert_category()
-		include_once( ABSPATH . 'wp-admin/includes/admin.php' );
+		}
 
 		$tags_blog_id = $this->options->get( 'tags_blog_id' );
-		if ( !$tags_blog_id || $wpdb->blogid == $tags_blog_id )
+		if ( !$tags_blog_id || $wpdb->blogid == $tags_blog_id ) {
 			return;
+		}
 
 		$allowed_post_types = apply_filters( 'sitewide_tags_allowed_post_types', array( 'post' => true ) );
 		if ( !isset( $allowed_post_types[ $post->post_type ] ) || !$allowed_post_types[ $post->post_type ] ) {
 			return;
 		}
+
+		$blogs_to_import = $this->get_blogs_to_import();
+		if ( ! in_array( (int) $wpdb->blogid, $blogs_to_import ) ) {
+			return;
+		}
+
+		// wp_insert_category()
+		include_once( ABSPATH . 'wp-admin/includes/admin.php' );
 
 		$post_blog_id = $wpdb->blogid;
 		$blog_status = get_blog_status( $post_blog_id, 'public' );
@@ -276,6 +313,8 @@ class WDS_Multisite_Aggregate {
 		}
 
 		switch_to_blog( $tags_blog_id );
+
+		$category_id = array();
 		if ( is_array( $cats ) && !empty( $cats ) && $post->post_status == 'publish' ) {
 			foreach( $cats as $t => $category ) {
 				$term = get_term_by( 'slug', $category['slug'], 'category' );
@@ -298,7 +337,7 @@ class WDS_Multisite_Aggregate {
 		}
 
 		$global_post = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->posts} WHERE guid IN (%s,%s)", $post->guid, esc_url( $post->guid ) ) );
-		if ( $post->post_status != 'publish' && is_object( $global_post ) ) {
+		if ( $post->post_status != 'publish' && is_object( $global_post ) && isset( $global_post->ID ) ) {
 			wp_delete_post( $global_post->ID );
 		} else {
 			if ( $global_post->ID != '' ) {
@@ -318,11 +357,14 @@ class WDS_Multisite_Aggregate {
 			// Use the category ID in the post
 			$post->post_category = $category_id;
 
-			$post_id = wp_insert_post( $post );
-			foreach( $global_meta as $key => $value ) {
-				if ( $value ) {
-					add_post_meta( $post_id, $key, $value );
+			if ( $post_id = wp_insert_post( $post ) && ! is_wp_error( $post_id ) ) {
+
+				foreach( $global_meta as $key => $value ) {
+					if ( $value ) {
+						add_post_meta( $post_id, $key, $value );
+					}
 				}
+				$this->imported[] = $post;
 			}
 
 		}
@@ -359,6 +401,64 @@ class WDS_Multisite_Aggregate {
 		restore_current_blog();
 	}
 
+	protected function get_blogs_to_import() {
+		if ( $this->options->get( 'populate_all_blogs' ) ) {
+			return $wpdb->get_col( "SELECT blog_id FROM $wpdb->blogs ORDER BY blog_id DESC" );
+		}
+		// 'all blogs' not checked? check the blogs_to_import option
+		return $this->options->get( 'blogs_to_import', array() );
+	}
+
+	public function user_notice() {
+
+		$number_imported = absint( $_GET['total_imported'] );
+
+		// JS to redirect to settings page after 3 seconds.
+		if ( $number_imported ) {
+			$class = 'updated';
+
+			$count = $this->strong_red( (int) $number_imported );
+			$msg = $this->heading( sprintf( __( 'Finished importing and/or updating %s posts! %s', 'wds-multisite-aggregate' ), $count, '&nbsp;'. $this->anchor( $this->get_aggregate_site_url(), __( 'Check them out?', 'wds-multisite-aggregate' ) ) ), 3 );
+
+		} else {
+			$class = 'error';
+			$msg = $this->heading( __( 'There are no posts to be aggregated.', 'wds-multisite-aggregate' ), 3 );
+		}
+
+		printf( '<div id="message" class="%s">%s</div>', $class, $msg );
+	}
+
+	protected function js_redirect( $url, $time_in_seconds = .5 ) {
+		return sprintf( '
+		<script type="text/javascript">
+			window.setTimeout( function() {
+				window.location.href = "%s";
+			}, %d );
+		</script>
+		', $url, $time_in_seconds * 1000 );
+	}
+
+	protected function notice_description( $text, $large = true ) {
+		$style = $large ? 'style="font-size: 120%;"' : '';
+		return '<p class="description" '. $style .'>'. $text .'</p>';
+	}
+
+	protected function strong_red( $text, $red = true ) {
+		$style = $red ? ' style="color:red;"' : '';
+		return sprintf( '<strong%s>%s</strong>', $style, $text );
+	}
+
+	protected function anchor( $url, $text ) {
+		return sprintf( '<a href="%s">%s</a>', esc_url( $url ), $text );
+	}
+
+	protected function heading( $text, $level = 1 ) {
+		return sprintf( '<h%2$d>%1$s</h%2$d>', $text, absint( $level ) );
+	}
+
+	protected function get_aggregate_site_url() {
+		return get_site_url( $this->options->get( 'tags_blog_id' ) );
+	}
 }
 
 $WDS_Multisite_Aggregate = new WDS_Multisite_Aggregate();
