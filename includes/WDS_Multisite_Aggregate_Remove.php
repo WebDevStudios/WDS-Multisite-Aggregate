@@ -14,13 +14,13 @@ class WDS_Multisite_Aggregate_Remove {
 	public function hooks() {
 		add_action( 'update_option_blog_public', array( $this, 'maybe_remove_blogs_posts' ), 10, 2 );
 
-		/* complete blog actions ($blog_id != 0) */
+		// complete blog actions ($blog_id != 0)
 		add_action( 'delete_blog', array( $this, 'remove_blogs_posts' ), 10, 1 );
 		add_action( 'archive_blog', array( $this, 'remove_blogs_posts' ), 10, 1 );
 		add_action( 'deactivate_blog', array( $this, 'remove_blogs_posts' ), 10, 1 );
 		add_action( 'make_spam_blog', array( $this, 'remove_blogs_posts' ), 10, 1 );
 		add_action( 'mature_blog', array( $this, 'remove_blogs_posts' ), 10, 1 );
-		/* single post actions ($blog_id == 0) */
+		// single post actions ($blog_id == 0)
 		add_action( 'transition_post_status', array( $this, 'remove_blogs_posts' ));
 	}
 
@@ -43,7 +43,7 @@ class WDS_Multisite_Aggregate_Remove {
 			return;
 		}
 
-		/* the tags blog */
+		// the tags blog
 		if ( $tags_blog_id == $wpdb->blogid ) {
 			return;
 		}
@@ -55,7 +55,7 @@ class WDS_Multisite_Aggregate_Remove {
 
 	/**
 	 * remove all posts from a given blog ($blog_id != 0)
-	 * - used if a blog is deleted or marked as deactivat, spam, archive, mature
+	 * - used if a blog is deleted or marked as deactivatd, spam, archive, mature
 	 * - also runs if a blog is switched to a none public blog (called by
 	 *   public_blog_update), more details on public_blog_update
 	 * removes some posts if the limit is reached ($blog_id == 0)
@@ -69,7 +69,7 @@ class WDS_Multisite_Aggregate_Remove {
 		$tags_blog_id = $this->options->get( 'tags_blog_id' );
 		$max_to_del = 10;
 
-		if( !$tags_blog_id )
+		if ( !$tags_blog_id )
 			return;
 
 		/* actions on the tags blog */
@@ -82,24 +82,24 @@ class WDS_Multisite_Aggregate_Remove {
 
 		if ( $blog_id != 0 ) {
 			$posts = $wpdb->get_col( "SELECT ID FROM {$wpdb->posts} WHERE guid LIKE '" . $blog_id . ".%' OR guid LIKE '" . esc_url( $blog_id ) . ".%'" );
-			if( is_array( $posts ) && !empty( $posts ) ) {
+			if ( is_array( $posts ) && !empty( $posts ) ) {
 				foreach( $posts as $p_id ) {
 					wp_delete_post( $p_id );
 				}
 			}
 		} else {
 			/* delete all posts over the max limit */
-			if( mt_rand( 0, 10 ) ) {
+			if ( mt_rand( 0, 10 ) ) {
 				$allowed_post_types = apply_filters( 'sitewide_tags_allowed_post_types', array( 'post' => true ) );
-				if( is_array( $allowed_post_types ) && !empty( $allowed_post_types ) ) {
+				if ( is_array( $allowed_post_types ) && !empty( $allowed_post_types ) ) {
 					$post_types = array();
 					foreach( $allowed_post_types as $k => $v ) {
-						if( $v ) {
+						if ( $v ) {
 							$post_types[] = $k;
 						}
 					}
-					if( is_array( $post_types ) && !empty( $post_types ) ) {
-						if( count( $post_types ) > 1 )
+					if ( is_array( $post_types ) && !empty( $post_types ) ) {
+						if ( count( $post_types ) > 1 )
 							$where = "IN ('" . join( "','", $post_types ) . "') ";
 						else
 							$where = "= '" . $post_types[0] . "' ";
@@ -107,9 +107,9 @@ class WDS_Multisite_Aggregate_Remove {
 						$where = "= 'post' ";
 					}
 					$posts = $wpdb->get_results( "SELECT ID, guid FROM {$wpdb->posts} WHERE post_status='publish' AND post_type {$where} ORDER BY ID DESC limit " . $this->options->get( 'tags_max_posts', 5000 ) . ", " . $max_to_del );
-					if( is_array( $posts ) && !empty( $posts ) ) {
+					if ( is_array( $posts ) && !empty( $posts ) ) {
 						foreach( $posts as $p ) {
-							if( preg_match('|^.*\.([0-9]+)$|', $p->guid, $matches) && intval( $matches[1] ) > 0 )
+							if ( preg_match('|^.*\.([0-9]+)$|', $p->guid, $matches) && intval( $matches[1] ) > 0 )
 								wp_delete_post( $p->ID );
 						}
 					}
