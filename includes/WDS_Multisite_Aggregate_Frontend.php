@@ -38,6 +38,12 @@ class WDS_Multisite_Aggregate_Frontend {
 			return $url;
 		}
 
+		$url = $this->retrieve_url_from_guid( $post );
+
+		if ( $url ) {
+			return $url;
+		}
+
 		return $link;
 	}
 
@@ -57,6 +63,35 @@ class WDS_Multisite_Aggregate_Frontend {
 		$thumb = get_post_meta( $post_id, 'thumbnail_html', true );
 
 		return $thumb ? $thumb : $html;
+	}
+
+	public function retrieve_url_from_guid( $_post ) {
+		global $post;
+
+		if ( is_numeric( $_post ) ) {
+			$_post = isset( $post->ID ) && $post->ID == $_post ? $post : get_post( $_post );
+		}
+		if ( ! isset( $_post->guid ) ) {
+			return false;
+		}
+
+		$guid = str_ireplace( array( 'http://', 'https://' ), '', $_post->guid );
+		if ( ! is_numeric( $guid ) ) {
+			return false;
+		}
+
+		if ( false === stripos( $guid, '.' ) ) {
+			return false;
+		}
+
+		$parts = explode( '.', $guid );
+		foreach ( $parts as $part ) {
+			if ( ! is_numeric( $part ) ) {
+				return false;
+			}
+		}
+		$url = get_site_url( $parts[0], '/?p='. $parts[1] );
+		return $url ? esc_url( $url ) : false;
 	}
 
 }
