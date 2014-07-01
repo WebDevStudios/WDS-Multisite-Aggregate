@@ -33,7 +33,8 @@ class WDS_Multisite_Aggregate_CLI extends WP_CLI_Command {
 		}
 
 		if ( ! $done['success'] ) {
-			WP_CLI::error( 'Failure: '. print_r( $done['data']['data'], true ) );
+			$error = isset( $done['data']['data'] ) ? $done['data']['data'] : $data['data'];
+			WP_CLI::error( 'Failure: '. print_r( $error, true ) );
 		}
 
 		$count = count( (array) $done['data']['posts_imported'] );
