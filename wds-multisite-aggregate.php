@@ -77,7 +77,8 @@ class WDS_Multisite_Aggregate {
 		add_action( 'delete_post', array( $this, 'sync_post_delete' ) );
 
 		if ( !empty( $_GET['action'] ) && $_GET['action'] == 'populate_posts_from_blog' ) {
-			add_action( 'init', array( $this, 'populate_posts_from_blog' ) );
+			define( 'WDS_Multisite_Aggregate', true );
+			add_action( 'init', array( $this, 'populate_posts_from_blog' ), 8 );
 		}
 		if ( ! empty( $_GET['page'] ) && 'wds-multisite-aggregate' == $_GET['page'] ) {
 			add_action( 'admin_init', array( $this, 'context_hooks' ) );
