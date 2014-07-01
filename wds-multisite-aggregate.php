@@ -142,7 +142,7 @@ class WDS_Multisite_Aggregate {
 
 			if ( $response ) {
 				$json = json_decode( $response );
-				// wp_die( '<xmp>$json: '. print_r( $json, true ) .'</xmp>' );
+				wp_die( '<xmp>$json: '. print_r( $json, true ) .'</xmp>' );
 				$data = $json->success ? $json->data : false;
 				if ( $data ) {
 					$this->total_imported = $this->total_imported + count( $data->posts_imported );
@@ -182,7 +182,8 @@ class WDS_Multisite_Aggregate {
 
 		}
 
-		wp_redirect( add_query_arg( array( 'total_imported' => $this->total_imported ), $this->admin->url() ) );
+		$this->save_user_notice();
+		wp_redirect( $this->admin->url() );
 		exit;
 
 	}
@@ -192,7 +193,6 @@ class WDS_Multisite_Aggregate {
 	 */
 	function populate_posts_from_blog() {
 		global $wpdb;
-
 		$valid_key = isset( $_REQUEST['key'] ) ? $_REQUEST['key'] == md5( serialize( get_blog_details( $wpdb->blogid ) ) ) : false;
 		if ( !$valid_key ) {
 			wp_send_json_error( 'not a valid key.' );
@@ -427,23 +427,25 @@ class WDS_Multisite_Aggregate {
 		return $this->options->get( 'blogs_to_import', array() );
 	}
 
-	public function user_notice() {
-
-		$number_imported = absint( $_GET['total_imported'] );
-
-		// JS to redirect to settings page after 3 seconds.
-		if ( $number_imported ) {
+	public function save_user_notice() {
+		if ( $this->total_imported ) {
 			$class = 'updated';
 
-			$count = $this->strong_red( (int) $number_imported );
-			$msg = $this->heading( sprintf( __( 'Finished importing and/or updating %s posts! %s', 'wds-multisite-aggregate' ), $count, '&nbsp;'. $this->anchor( $this->get_aggregate_site_url(), __( 'Check them out?', 'wds-multisite-aggregate' ) ) ), 3 );
+			$count = $this->strong_red( (int) $this->total_imported );
+			$message = $this->heading( sprintf( __( 'Finished importing and/or updating %s posts! %s', 'wds-multisite-aggregate' ), $count, '&nbsp;'. $this->anchor( $this->get_aggregate_site_url(), __( 'Check them out?', 'wds-multisite-aggregate' ) ) ), 3 );
 
 		} else {
 			$class = 'error';
-			$msg = $this->heading( __( 'There are no posts to be aggregated.', 'wds-multisite-aggregate' ), 3 );
+			$message = $this->heading( __( 'There are no posts to be aggregated.', 'wds-multisite-aggregate' ), 3 );
 		}
+		add_site_option( 'wds_multisite_aggregate_message', compact( 'class', 'message' ) );
+	}
 
-		printf( '<div id="message" class="%s">%s</div>', $class, $msg );
+	public function print_user_notice() {
+		if ( $msg = get_site_option( 'wds_multisite_aggregate_message' ) ) {
+			printf( '<div id="message" class="%s">%s</div>', $msg['class'], $msg['message'] );
+			delete_site_option( 'wds_multisite_aggregate_message' );
+		}
 	}
 
 	protected function js_redirect( $url, $time_in_seconds = .5 ) {
