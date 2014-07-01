@@ -33,7 +33,7 @@ class WDS_Multisite_Aggregate_CLI extends WP_CLI_Command {
 		}
 
 		if ( ! $done['success'] ) {
-			$error = isset( $done['data']['data'] ) ? $done['data']['data'] : $data['data'];
+			$error = isset( $done['data']['data'] ) ? $done['data']['data'] : $done['data'];
 			WP_CLI::error( 'Failure: '. print_r( $error, true ) );
 		}
 
