@@ -14,6 +14,9 @@ For performance reasons the number of posts is limited to a user configurable am
 
 Based on WordPress MU Sitewide Tags Pages plugin by Donncha O Caoimh.
 
+WPCLI is supported:
+`wp multisite_aggregate --help`.
+
 == Install ==
 1. Install in your plugins directory in the usual way and network activate the plugin. There is no need to put it in mu-plugins.
 2. Login as a site administrator and go to Super Admin->Sitewide Tags.
