@@ -138,11 +138,13 @@ class WDS_Multisite_Aggregate {
 			$post_count  = 0;
 			$_post_count = 0;
 			$result      = wp_remote_get( $url );
-			$response    = wp_remote_retrieve_body( $result );
+			if ( is_wp_error( $result ) ) {
+				wp_die( $result->get_error_message() );
+			}
+			$response = wp_remote_retrieve_body( $result );
 
 			if ( $response ) {
 				$json = json_decode( $response );
-				wp_die( '<xmp>$json: '. print_r( $json, true ) .'</xmp>' );
 				$data = $json->success ? $json->data : false;
 				if ( $data ) {
 					$this->total_imported = $this->total_imported + count( $data->posts_imported );
