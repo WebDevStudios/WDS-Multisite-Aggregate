@@ -2,7 +2,7 @@
 /*
 Plugin Name: WDS Multisite Aggregate
 Plugin URI: http://ocaoimh.ie/wordpress-mu-sitewide-tags/
-Description: Creates a blog where all the most recent posts on a WordPress network may be found. Based on WordPress MU Sitewide Tags Pages plugin by Donncha O Caoimh.
+Description: Creates a blog where all the most recent posts on a WordPress network may be found. Based on WordPress MU Sitewide Tags Pages plugin by Donncha O Caoimh. WP-CLI: `wp multisite_aggregate --help`.
 Version: 1.0.0
 Author: WebDevStudios
 Author URI: http://webdevstudios.com
@@ -197,18 +197,28 @@ class WDS_Multisite_Aggregate {
 		global $wpdb;
 		$valid_key = isset( $_REQUEST['key'] ) ? $_REQUEST['key'] == md5( serialize( get_blog_details( $wpdb->blogid ) ) ) : false;
 		if ( !$valid_key ) {
-			wp_send_json_error( 'not a valid key.' );
+			return $this->error( 'not a valid key.' );
 		}
+		$this->_populate_posts_from_blog( array(
+			'post_count' => isset( $_GET['post_count'] ) ? (int) $_GET['post_count'] : 0,
+		) );
+	}
+
+	/**
+	 * run populate function in local blog context because get_permalink does not produce the correct permalinks while switched
+	 */
+	function _populate_posts_from_blog( $args = array() ) {
+		global $wpdb;
 
 		$tags_blog_id = $this->options->get( 'tags_blog_id' );
 		$tags_blog_enabled = $this->options->get( 'tags_blog_enabled' );
 
 		if ( !$tags_blog_enabled || !$tags_blog_id || $tags_blog_id == $wpdb->blogid ) {
-			wp_send_json_error( 'Aggregate blog not enabled OR there is no aggregate blog ID OR the current site IS the aggregate blog.' );
+			return $this->error( 'Aggregate blog not enabled OR there is no aggregate blog ID OR the current site IS the aggregate blog.' );
 		}
 
 		$posts_done = 0;
-		$post_count = isset( $_GET['post_count'] ) ? (int) $_GET['post_count'] : 0; // post count
+		$post_count = isset( $args['post_count'] ) ? (int) $args['post_count'] : 0; // post count
 		while ( $posts_done < 300 ) {
 			$args = array(
 				'fields'         => 'ids',
@@ -219,7 +229,7 @@ class WDS_Multisite_Aggregate {
 			$posts = get_posts( $args );
 
 			if ( empty( $posts ) ) {
-				wp_send_json_success( array(
+				return $this->success( array(
 					'posts_done'     => 0,
 					'posts_imported' => $this->imported,
 				) );
@@ -227,13 +237,17 @@ class WDS_Multisite_Aggregate {
 
 			foreach ( $posts as $post ) {
 				if ( $post != 1 && $post != 2 ) {
-					$this->do_post_sync( $post, get_post( $post ) );
+					$maybe_error = $this->do_post_sync( $post, get_post( $post ) );
+
+					if ( $maybe_error ) {
+						return $this->error( $maybe_error );
+					}
 				}
 			}
 			$posts_done += 50;
 		}
 
-		wp_send_json_success( array(
+		return $this->success( array(
 			'posts_done'     => $posts_done,
 			'posts_imported' => $this->imported,
 		) );
@@ -241,38 +255,22 @@ class WDS_Multisite_Aggregate {
 	}
 
 	function do_post_sync( $post_id, $post ) {
+		$this->post_id = $post_id;
+		$this->post    = $post;
+
 		if ( $this->doing_save_post ) {
-			return $this->add_post_sync_hook( $post_id, $post );
+			return $this->add_post_sync_hook();
 		}
 
-		global $wpdb;
-
-		if ( !$this->options->get( 'tags_blog_enabled' ) ) {
-			return;
-		}
-
-		$tags_blog_id = $this->options->get( 'tags_blog_id' );
-		if ( !$tags_blog_id || $wpdb->blogid == $tags_blog_id ) {
-			return;
-		}
-
-		$allowed_post_types = apply_filters( 'sitewide_tags_allowed_post_types', array( 'post' => true ) );
-		if ( !isset( $allowed_post_types[ $post->post_type ] ) || !$allowed_post_types[ $post->post_type ] ) {
-			return;
-		}
-
-		$blogs_to_import = $this->get_blogs_to_import();
-		if ( ! in_array( (int) $wpdb->blogid, $blogs_to_import ) ) {
-			return;
+		if ( $error = $this->check_for_site_problems() ) {
+			return $this->error_if_wpcli( $error );
 		}
 
 		// wp_insert_category()
 		include_once( ABSPATH . 'wp-admin/includes/admin.php' );
 
-		$post_blog_id = $wpdb->blogid;
-		$blog_status = get_blog_status( $post_blog_id, 'public' );
-
-		if ( $blog_status != 1 && ( $blog_status != 0 || $this->options->get( 'tags_blog_public') == 1 || $this->options->get( 'tags_blog_pub_check') == 0 ) ) {
+		$allowed_post_types = apply_filters( 'sitewide_tags_allowed_post_types', array( 'post' => true ) );
+		if ( !isset( $allowed_post_types[ $post->post_type ] ) || !$allowed_post_types[ $post->post_type ] ) {
 			return;
 		}
 
@@ -285,6 +283,8 @@ class WDS_Multisite_Aggregate {
 
 		$post->tags_input = implode( ', ', wp_get_post_tags( $post_id, array('fields' => 'names') ) );
 
+		global $wpdb;
+		$post_blog_id = $wpdb->blogid;
 		$post->guid = $post_blog_id . '.' . $post_id;
 
 		$this->global_meta = array();
@@ -296,8 +296,9 @@ class WDS_Multisite_Aggregate {
 		}
 		unset( $meta_keys );
 
+
 		$this->global_meta['permalink'] = get_permalink( $post_id );
-		$this->global_meta['blogid'] = $wpdb->blogid; // org_blog_id
+		$this->global_meta['blogid'] = $post_blog_id; // org_blog_id
 
 		if ( $this->options->get( 'tags_blog_thumbs' ) && ( $thumb_id = get_post_meta( $post->ID, '_thumbnail_id', true ) ) ) {
 			$thumb_size = apply_filters( 'sitewide_tags_thumb_size', 'thumbnail' );
@@ -322,6 +323,7 @@ class WDS_Multisite_Aggregate {
 			if ( !empty( $tax_input ) )
 					$post->tax_input = $tax_input;
 		}
+		$tags_blog_id = $this->options->get( 'tags_blog_id' );
 
 		switch_to_blog( $tags_blog_id );
 
@@ -351,7 +353,7 @@ class WDS_Multisite_Aggregate {
 		if ( $post->post_status != 'publish' && is_object( $global_post ) && isset( $global_post->ID ) ) {
 			wp_delete_post( $global_post->ID );
 		} else {
-			if ( $global_post->ID != '' ) {
+			if ( isset( $global_post->ID ) && $global_post->ID != '' ) {
 				$post->ID = $global_post->ID; // editing an old post
 
 				foreach( array_keys( $this->global_meta ) as $key ) {
@@ -376,8 +378,34 @@ class WDS_Multisite_Aggregate {
 		restore_current_blog();
 	}
 
-	public function add_post_sync_hook( $post_id, $post ) {
-		do_action( 'wds_multisite_aggregate_post_sync', $post_id, $post );
+	function check_for_site_problems() {
+		global $wpdb;
+
+		if ( !$this->options->get( 'tags_blog_enabled' ) ) {
+			return __( 'Multisite Aggregate not enabled.', 'wds-multisite-aggregate' );
+		}
+
+		$tags_blog_id = $this->options->get( 'tags_blog_id' );
+		if ( !$tags_blog_id || $wpdb->blogid == $tags_blog_id ) {
+			return __( 'No Multisite Aggregate blog ID, or current blog is Multisite Aggregate blog.', 'wds-multisite-aggregate' );
+		}
+
+		$blogs_to_import = $this->get_blogs_to_import();
+		if ( ! in_array( (int) $wpdb->blogid, $blogs_to_import ) ) {
+			return __( 'Blog ID is not saved to the "Blogs to Aggregate" setting.', 'wds-multisite-aggregate' );
+		}
+
+		$blog_status = get_blog_status( $wpdb->blogid, 'public' );
+
+		if ( $blog_status != 1 && ( $blog_status != 0 || $this->options->get( 'tags_blog_public') == 1 || $this->options->get( 'tags_blog_pub_check') == 0 ) ) {
+			return __( "This blog's status is not set to public", 'wds-multisite-aggregate' );
+		}
+
+		return false;
+	}
+
+	public function add_post_sync_hook() {
+		do_action( 'wds_multisite_aggregate_post_sync', $this->post_id, $this->post );
 		$this->doing_save_post = false;
 	}
 
@@ -388,7 +416,7 @@ class WDS_Multisite_Aggregate {
 				$updated[ $key ] = add_post_meta( $post_id, $key, $value );
 			}
 		}
-		// wp_send_json_error( compact( 'post_id', 'updated', 'post' ) );
+		// return $this->error( compact( 'post_id', 'updated', 'post' ) );
 	}
 
 	function sync_post_delete( $post_id ) {
@@ -481,7 +509,32 @@ class WDS_Multisite_Aggregate {
 	protected function get_aggregate_site_url() {
 		return get_site_url( $this->options->get( 'tags_blog_id' ) );
 	}
+
+	protected function error( $data ) {
+		if ( defined('WP_CLI') && WP_CLI ) {
+			return array( 'success' => false, 'data' => $data );
+		}
+		wp_send_json_error( $data );
+	}
+
+	protected function success( $data ) {
+		if ( defined('WP_CLI') && WP_CLI ) {
+			return array( 'success' => true, 'data' => $data );
+		}
+		wp_send_json_success( $data );
+	}
+
+	protected function error_if_wpcli( $data ) {
+		if ( defined('WP_CLI') && WP_CLI ) {
+			return array( 'success' => false, 'data' => $data );
+		}
+	}
+
 }
 
 $WDS_Multisite_Aggregate = new WDS_Multisite_Aggregate();
 $WDS_Multisite_Aggregate->hooks();
+
+if ( defined('WP_CLI') && WP_CLI ) {
+	include_once( dirname( __FILE__ ) .'/includes/WDS_Multisite_Aggregate_CLI.php' );
+}
