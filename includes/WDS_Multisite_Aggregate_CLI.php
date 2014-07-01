@@ -63,24 +63,22 @@ class WDS_Multisite_Aggregate_CLI extends WP_CLI_Command {
 	}
 
 	/**
-	 * Aggregate posts from a specific blog
+	 * Get a specific option value from the Multisite Aggregate settings (or all of them)
 	 *
 	 * ## Options
 	 *
-	 * id
-	 * : WDS Multisite Aggregate option key to retrieve
+	 * key
+	 * : WDS Multisite Aggregate option key to retrieve. If not included, entire options array is displayed.
 	 *
 	 * ## EXAMPLES
-	 * 		wp multisite_aggregate get_option=tags_blog_id
+	 * 		wp multisite_aggregate get_option
+	 * 		wp multisite_aggregate get_option --key=tags_blog_id
 	 *
-	 * @synopsis [--key=<int>] [--post_count=<int>]
+	 * @synopsis [--key=<string>]
 	 */
 	public function get_option( $args, $assoc_args ) {
-		if ( ! isset( $assoc_args['key'] ) || ! is_string( $assoc_args['key'] ) ) {
-			WP_CLI::error( '"--key=OPTION_KEY" is required and must be a string value' );
-		}
-
-		WP_CLI::line( $this->plugin( 'options' )->get( $assoc_args['key'] ) );
+		$key = isset( $assoc_args['key'] ) && is_string( $assoc_args['key'] ) ? $assoc_args['key'] : 'all';
+		WP_CLI::line( print_r( $this->plugin( 'options' )->get( $key ), true ) );
 	}
 
 	protected function plugin( $property = '' ) {
