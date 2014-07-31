@@ -48,6 +48,11 @@ class WDS_Multisite_Aggregate_Frontend {
 	}
 
 	function thumbnail_link( $html, $post_id ) {
+
+		if ( get_post_thumbnail_id( $post_id ) ) {
+			return $html;
+		}
+
 		global $wpdb;
 
 		$tags_blog_id = $this->options->get( 'tags_blog_id' );
