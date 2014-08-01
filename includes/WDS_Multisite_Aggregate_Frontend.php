@@ -14,7 +14,7 @@ class WDS_Multisite_Aggregate_Frontend {
 	public function hooks() {
 		add_filter( 'post_link', array( $this, 'post_link' ), 10, 2 );
 		add_filter( 'page_link', array( $this, 'post_link' ), 10, 2 );
-		add_filter( 'post_thumbnail_html', array( $this, 'thumbnail_link' ), 10, 2 );
+		add_filter( 'post_thumbnail_html', array( $this, 'thumbnail_link' ), 10, 4 );
 	}
 
 	function post_link( $link, $post ) {
@@ -47,7 +47,7 @@ class WDS_Multisite_Aggregate_Frontend {
 		return $link;
 	}
 
-	function thumbnail_link( $html, $post_id ) {
+	function thumbnail_link( $html, $post_id, $post_thumbnail_id, $size ) {
 
 		if ( get_post_thumbnail_id( $post_id ) ) {
 			return $html;
@@ -65,7 +65,9 @@ class WDS_Multisite_Aggregate_Frontend {
 			return $html;
 		}
 
-		$thumb = get_post_meta( $post_id, 'thumbnail_html', true );
+		$thumb = get_post_meta( $post_id, "thumbnail_html_$size", true );
+		// back-compat
+		$thumb = $thumb ? $thumb : get_post_meta( $post_id, 'thumbnail_html', true );
 
 		return $thumb ? $thumb : $html;
 	}

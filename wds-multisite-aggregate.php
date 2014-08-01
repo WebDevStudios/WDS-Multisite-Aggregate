@@ -300,9 +300,24 @@ class WDS_Multisite_Aggregate {
 		$this->global_meta['permalink'] = get_permalink( $post_id );
 		$this->global_meta['blogid'] = $post_blog_id; // org_blog_id
 
-		if ( $this->options->get( 'tags_blog_thumbs' ) && ( $thumb_id = get_post_meta( $post->ID, '_thumbnail_id', true ) ) ) {
-			$thumb_size = apply_filters( 'sitewide_tags_thumb_size', 'thumbnail' );
-			$this->global_meta['thumbnail_html'] = wp_get_attachment_image( $thumb_id, $thumb_size );
+		if ( $this->options->get( 'tags_blog_thumbs' ) && ( $thumb_id = get_post_thumbnail_id( $post->ID ) ) ) {
+
+			$thumb_sizes = apply_filters( 'sitewide_tags_thumb_size', array(
+				'thumbnail' ) );
+
+			// back-compat
+			if ( is_string( $thumb_sizes ) ) {
+				$this->global_meta['thumbnail_html'] = wp_get_attachment_image( $thumb_id, $thumb_sizes );
+			} else {
+				// back-compat
+				$this->global_meta['thumbnail_html'] = wp_get_attachment_image( $thumb_id, 'thumbnail' );
+			}
+
+			// new hawtness
+			foreach ( (array) $thumb_sizes as $thumb_size ) {
+				$this->global_meta[ "thumbnail_html_$thumb_size" ] = wp_get_attachment_image( $thumb_id, $thumb_size );
+			}
+
 		}
 
 		// custom taxonomies
