@@ -53,6 +53,7 @@ class WDS_Multisite_Aggregate {
 	protected $imported        = array();
 	protected $total_imported  = 0;
 	protected $doing_save_post = false;
+	protected $debug           = false;
 
 	public function __construct() {
 		// Options setter/getter and handles updating options on save
@@ -67,6 +68,11 @@ class WDS_Multisite_Aggregate {
 		// Handles frontend modification for aggregate site
 		$this->frontend = new WDS_Multisite_Aggregate_Frontend( $this->options );
 		$this->frontend->hooks();
+
+		if ( isset( $_REQUEST['aggregate_debug'] ) ) {
+			$this->debug = new WDS_Multisite_Aggregate_Debug();
+			$this->debug->hooks();
+		}
 	}
 
 	function hooks() {
@@ -274,11 +280,12 @@ class WDS_Multisite_Aggregate {
 			return;
 		}
 
-		$post->post_category = wp_get_post_categories( $post_id );
-		$cats = array();
-		foreach( $post->post_category as $cat_slug ) {
-			$cat = get_category( $cat_slug );
-			$cats[] = array( 'name' => esc_html( $cat->name ), 'slug' => esc_html( $cat->slug ) );
+		$post_categories = wp_get_object_terms( $post_id, 'category' );
+
+		if ( $post_categories && ! is_wp_error( $post_categories ) && is_array( $post_categories ) ) {
+			$post->post_category = wp_list_pluck( $post_categories, 'term_id' );
+		} else {
+			$post->post_category = wp_get_post_categories( $post_id );
 		}
 
 		$post->tags_input = implode( ', ', wp_get_post_tags( $post_id, array('fields' => 'names') ) );
@@ -342,28 +349,42 @@ class WDS_Multisite_Aggregate {
 
 		switch_to_blog( $tags_blog_id );
 
-		$category_id = array();
-		if ( is_array( $cats ) && !empty( $cats ) && $post->post_status == 'publish' ) {
-			foreach( $cats as $t => $category ) {
-				$term = get_term_by( 'slug', $category['slug'], 'category' );
+		$category_ids = array();
+		if ( is_array( $post_categories ) && !empty( $post_categories ) && $post->post_status == 'publish' ) {
+			foreach( $post_categories as $t => $category ) {
+				$term = get_term_by( 'slug', $category->slug, 'category' );
+				if ( $this->debug ) {
+					echo '<xmp>$category_to_migrate: '. print_r( $category, true ) .'</xmp>';
+					echo '<xmp>$term_on_aggregate: '. print_r( $term, true ) .'</xmp>';
+				}
 				if ( $term && $term->parent == 0 ) {
-					$category_id[] = $term->term_id;
+					$category_ids[] = $term->term_id;
 					continue;
 				}
 
 				// Here is where we insert the category if necessary
-				wp_insert_category( array(
-					'cat_name'             => $category['name'],
-					'category_description' => $category['name'],
-					'category_nicename'    => $category['slug'],
+				$category_id = wp_insert_category( array(
+					'cat_name'             => $category->name,
+					'category_description' => $category->name,
+					'category_nicename'    => $category->slug,
 					'category_parent'      => ''
-				) );
+				), true );
 
-				// Now get the category ID to be used for the post
-				$category_id[] = $wpdb->get_var( "SELECT term_id FROM " . $wpdb->get_blog_prefix( $tags_blog_id ) . "terms WHERE slug = '" . $category['slug'] . "'" );
+				if (
+					is_wp_error( $category_id )
+					&& false !== stripos( $category_id->get_error_message(), 'already exists' )
+					&& is_numeric( $category_id->get_error_data() )
+				) {
+					$category_ids[] = $category_id->get_error_data();
+				} elseif ( is_numeric( $category_id ) ) {
+					$category_ids[] = $category_id;
+				}
+
 			}
 		}
-
+		if ( $this->debug ) {
+			wp_die( '<xmp>$category_ids_to_add_to_post: '. print_r( $category_ids, true ) .'</xmp>' );
+		}
 		$global_post = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->posts} WHERE guid IN (%s,%s)", $post->guid, esc_url( $post->guid ) ) );
 		if ( $post->post_status != 'publish' && is_object( $global_post ) && isset( $global_post->ID ) ) {
 			wp_delete_post( $global_post->ID );
@@ -382,8 +403,8 @@ class WDS_Multisite_Aggregate {
 			$post->ping_status = 'closed';
 			$post->comment_status = 'closed';
 
-			// Use the category ID in the post
-			$post->post_category = $category_id;
+			// Use the category IDs in the post
+			$post->post_category = $category_ids;
 			$this->doing_save_post = true;
 			if ( $post_id = wp_insert_post( $post, true ) && ! is_wp_error( $post_id ) ) {
 				$this->imported[] = $post;
