@@ -579,6 +579,9 @@ class WDS_Multisite_Aggregate {
 	public function __get( $field ) {
 		switch( $field ) {
 			case 'options':
+			case 'admin':
+			case 'remove':
+			case 'frontend':
 			case 'debug':
 				return $this->{$field};
 			default:
