@@ -353,6 +353,7 @@ class WDS_Multisite_Aggregate {
 		if ( is_array( $post_categories ) && !empty( $post_categories ) && $post->post_status == 'publish' ) {
 			foreach( $post_categories as $t => $category ) {
 				$term = get_term_by( 'slug', $category->slug, 'category' );
+				$term = apply_filters( 'sitewide_tags_get_term', $term, $category, $this );
 				if ( $this->debug ) {
 					echo '<xmp>$category_to_migrate: '. print_r( $category, true ) .'</xmp>';
 					echo '<xmp>$term_on_aggregate: '. print_r( $term, true ) .'</xmp>';
