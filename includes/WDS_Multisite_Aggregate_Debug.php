@@ -7,8 +7,6 @@
  */
 class WDS_Multisite_Aggregate_Debug {
 
-	public $blah = 'blah';
-
 	public function hooks() {
 		add_action( 'post_submitbox_start', array( $this, 'test' ) );
 	}

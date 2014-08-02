@@ -567,6 +567,25 @@ class WDS_Multisite_Aggregate {
 		}
 	}
 
+	/**
+	 * Magic getter for our object.
+	 *
+	 * @param string $field
+	 *
+	 * @throws Exception Throws an exception if the field is invalid.
+	 *
+	 * @return mixed
+	 */
+	public function __get( $field ) {
+		switch( $field ) {
+			case 'options':
+			case 'debug':
+				return $this->{$field};
+			default:
+				return new WP_Error( 'wds_multisite_aggregate', __( 'Inaccessible Parameter', 'wds-multisite-aggregate' ) );
+		}
+	}
+
 }
 
 $WDS_Multisite_Aggregate = new WDS_Multisite_Aggregate();
