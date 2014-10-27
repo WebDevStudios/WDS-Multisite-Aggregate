@@ -293,7 +293,7 @@ class WDS_Multisite_Aggregate {
 
 		global $wpdb;
 		$post_blog_id = $wpdb->blogid;
-		$post->guid = $post_blog_id . '.' . $post_id;
+		$post->guid = "{$post_blog_id}.{$post_id}";
 
 		$this->global_meta = array();
 		$meta_keys = apply_filters( 'sitewide_tags_meta_keys', $this->options->get( 'tags_blog_postmeta', array() ) );
@@ -416,37 +416,6 @@ class WDS_Multisite_Aggregate {
 		restore_current_blog();
 	}
 
-	function do_comment_sync( $post_id ) {
-		global $wpdb;
-
-		$tags_blog_id = $this->options->get( 'tags_blog_id' );
-
-		if ( null === $tags_blog_id ) {
-			return;
-		}
-
-		if ( $wpdb->blogid == $tags_blog_id ) {
-			return;
-		}
-		
-		$post_blog_id = $wpdb->blogid;
-
-		$new = (int) $wpdb->get_var( $wpdb->prepare("SELECT COUNT(*) FROM $wpdb->comments WHERE comment_post_ID = %d AND comment_approved = '1'", $post_id ) );
-
-		switch_to_blog( $tags_blog_id );
-
-		$guid = "{$post_blog_id}.{$post_id}";
-
-		$global_post_id = $wpdb->get_var( $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE guid IN (%s,%s)", $guid, esc_url( $guid ) ) );
-
-		if ( null !== $global_post_id ) {
-			$wpdb->update( $wpdb->posts, array( 'comment_count' => $new ), array( 'ID' => $global_post_id ) );
-			clean_post_cache( $global_post_id );
-		}
-
-		restore_current_blog();
-	}
-
 	function check_for_site_problems() {
 		global $wpdb;
 
@@ -488,19 +457,42 @@ class WDS_Multisite_Aggregate {
 		// return $this->error( compact( 'post_id', 'updated', 'post' ) );
 	}
 
+	function do_comment_sync( $post_id ) {
+		global $wpdb;
+
+		$tags_blog_id = $this->options->get( 'tags_blog_id' );
+
+		if ( ! $tags_blog_id || $wpdb->blogid == $tags_blog_id ) {
+			return;
+		}
+
+		$post_blog_id = $wpdb->blogid;
+
+		$new = (int) $wpdb->get_var( $wpdb->prepare("SELECT COUNT(*) FROM $wpdb->comments WHERE comment_post_ID = %d AND comment_approved = '1'", $post_id ) );
+
+		switch_to_blog( $tags_blog_id );
+
+		$guid = "{$post_blog_id}.{$post_id}";
+
+		$global_post_id = $wpdb->get_var( $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE guid IN (%s,%s)", $guid, esc_url( $guid ) ) );
+
+		if ( null !== $global_post_id ) {
+			$wpdb->update( $wpdb->posts, array( 'comment_count' => $new ), array( 'ID' => $global_post_id ) );
+			clean_post_cache( $global_post_id );
+		}
+
+		restore_current_blog();
+	}
+
 	function sync_post_delete( $post_id ) {
+		global $wpdb;
 		/*
 		 * what should we do if a post will be deleted and the tags blog feature is disabled?
 		 * need an check if we have a post on the tags blog and if so - delete this
 		 */
-		global $wpdb;
 		$tags_blog_id = $this->options->get( 'tags_blog_id' );
 
-		if ( null === $tags_blog_id ) {
-			return;
-		}
-
-		if ( $wpdb->blogid == $tags_blog_id ) {
+		if ( ! $tags_blog_id || $wpdb->blogid == $tags_blog_id ) {
 			return;
 		}
 
