@@ -83,7 +83,7 @@ class WDS_Multisite_Aggregate {
 		add_action( 'trash_post', array( $this, 'sync_post_delete' ) );
 		add_action( 'delete_post', array( $this, 'sync_post_delete' ) );
 
-		if ( !empty( $_GET['action'] ) && $_GET['action'] == 'populate_posts_from_blog' ) {
+		if ( ! empty( $_GET['action'] ) && 'populate_posts_from_blog' == $_GET['action'] ) {
 			define( 'WDS_Multisite_Aggregate', true );
 			add_action( 'init', array( $this, 'populate_posts_from_blog' ), 8 );
 		}
@@ -100,7 +100,7 @@ class WDS_Multisite_Aggregate {
 
 		$valid_nonce = isset( $_REQUEST['_wpnonce'] ) ? wp_verify_nonce( $_REQUEST['_wpnonce'], 'wds-multisite-aggregate' ) : false;
 
-		if ( !$valid_nonce ) {
+		if ( ! $valid_nonce ) {
 			return;
 		}
 
@@ -124,9 +124,8 @@ class WDS_Multisite_Aggregate {
 		// No query string? Check options
 		$blogs_to_import      = ! empty( $blogs_to_import ) ? $blogs_to_import : $this->get_blogs_to_import();
 
-
 		$tags_blog_id = $this->options->get( 'tags_blog_id' );
-		if ( !$tags_blog_id || empty( $blogs_to_import ) ) {
+		if ( ! $tags_blog_id || empty( $blogs_to_import ) ) {
 			return false;
 		}
 
@@ -203,7 +202,7 @@ class WDS_Multisite_Aggregate {
 	function populate_posts_from_blog() {
 		global $wpdb;
 		$valid_key = isset( $_REQUEST['key'] ) ? $_REQUEST['key'] == md5( serialize( get_blog_details( $wpdb->blogid ) ) ) : false;
-		if ( !$valid_key ) {
+		if ( ! $valid_key ) {
 			return $this->error( 'not a valid key.' );
 		}
 		$this->_populate_posts_from_blog( array(
@@ -220,7 +219,7 @@ class WDS_Multisite_Aggregate {
 		$tags_blog_id = $this->options->get( 'tags_blog_id' );
 		$tags_blog_enabled = $this->options->get( 'tags_blog_enabled' );
 
-		if ( !$tags_blog_enabled || !$tags_blog_id || $tags_blog_id == $wpdb->blogid ) {
+		if ( ! $tags_blog_enabled || ! $tags_blog_id || $tags_blog_id == $wpdb->blogid ) {
 			return $this->error( 'Aggregate blog not enabled OR there is no aggregate blog ID OR the current site IS the aggregate blog.' );
 		}
 
@@ -231,7 +230,7 @@ class WDS_Multisite_Aggregate {
 				'fields'         => 'ids',
 				'offset'         => $post_count + $posts_done,
 				'posts_per_page' => 50,
-				'post_status'    =>  'publish',
+				'post_status'    => 'publish',
 			);
 			$posts = get_posts( $args );
 
@@ -243,7 +242,7 @@ class WDS_Multisite_Aggregate {
 			}
 
 			foreach ( $posts as $post ) {
-				if ( $post != 1 && $post != 2 ) {
+				if ( 1 != $post && 2 != $post ) {
 					$maybe_error = $this->do_post_sync( $post, get_post( $post ) );
 
 					if ( $maybe_error ) {
@@ -277,7 +276,7 @@ class WDS_Multisite_Aggregate {
 		include_once( ABSPATH . 'wp-admin/includes/admin.php' );
 
 		$allowed_post_types = apply_filters( 'sitewide_tags_allowed_post_types', array( 'post' => true ) );
-		if ( !isset( $allowed_post_types[ $post->post_type ] ) || !$allowed_post_types[ $post->post_type ] ) {
+		if ( ! isset( $allowed_post_types[ $post->post_type ] ) || ! $allowed_post_types[ $post->post_type ] ) {
 			return;
 		}
 
@@ -289,7 +288,7 @@ class WDS_Multisite_Aggregate {
 			$post->post_category = wp_get_post_categories( $post_id );
 		}
 
-		$post->tags_input = implode( ', ', wp_get_post_tags( $post_id, array('fields' => 'names') ) );
+		$post->tags_input = implode( ', ', wp_get_post_tags( $post_id, array( 'fields' => 'names', ) ) );
 
 		global $wpdb;
 		$post_blog_id = $wpdb->blogid;
@@ -297,13 +296,12 @@ class WDS_Multisite_Aggregate {
 
 		$this->global_meta = array();
 		$meta_keys = apply_filters( 'sitewide_tags_meta_keys', $this->options->get( 'tags_blog_postmeta', array() ) );
-		if ( is_array( $meta_keys ) && !empty( $meta_keys ) ) {
-			foreach( $meta_keys as $key ) {
+		if ( is_array( $meta_keys ) && ! empty( $meta_keys ) ) {
+			foreach ( $meta_keys as $key ) {
 				$this->global_meta[ $key ] = get_post_meta( $post->ID, $key, true );
 			}
 		}
 		unset( $meta_keys );
-
 
 		$this->global_meta['permalink'] = get_permalink( $post_id );
 		$this->global_meta['blogid'] = $post_blog_id; // org_blog_id
@@ -325,41 +323,43 @@ class WDS_Multisite_Aggregate {
 			foreach ( (array) $thumb_sizes as $thumb_size ) {
 				$this->global_meta[ "thumbnail_html_$thumb_size" ] = wp_get_attachment_image( $thumb_id, $thumb_size );
 			}
-
 		}
 
 		// custom taxonomies
 		$taxonomies = apply_filters( 'sitewide_tags_custom_taxonomies', array() );
-		if ( !empty( $taxonomies ) && $post->post_status == 'publish' ) {
+		if ( ! empty( $taxonomies ) && 'publish' == $post->post_status ) {
 			$registered_tax = array_diff( get_taxonomies(), array( 'post_tag', 'category', 'link_category', 'nav_menu' ) );
 			$custom_tax = array_intersect( $taxonomies, $registered_tax );
 			$tax_input = array();
-			foreach( $custom_tax as $tax ) {
+			foreach ( $custom_tax as $tax ) {
 				$terms = wp_get_object_terms( $post_id, $tax, array( 'fields' => 'names' ) );
-				if ( empty( $terms ) )
+				if ( empty( $terms ) ) {
 					continue;
-				if ( is_taxonomy_hierarchical( $tax ) )
+				}
+				if ( is_taxonomy_hierarchical( $tax ) ) {
 					$tax_input[ $tax ] = $terms;
-				else
+				} else {
 					$tax_input[ $tax ] = implode( ',', $terms );
+				}
 			}
-			if ( !empty( $tax_input ) )
-					$post->tax_input = $tax_input;
+			if ( ! empty( $tax_input ) ) {
+				$post->tax_input = $tax_input;
+			}
 		}
 		$tags_blog_id = $this->options->get( 'tags_blog_id' );
 
 		switch_to_blog( $tags_blog_id );
 
 		$category_ids = array();
-		if ( is_array( $post_categories ) && !empty( $post_categories ) && $post->post_status == 'publish' ) {
-			foreach( $post_categories as $t => $category ) {
+		if ( is_array( $post_categories ) && ! empty( $post_categories ) && 'publish' == $post->post_status ) {
+			foreach ( $post_categories as $t => $category ) {
 				$term = get_term_by( 'slug', $category->slug, 'category' );
 				$term = apply_filters( 'sitewide_tags_get_term', $term, $category, $this );
 				if ( $this->debug ) {
 					echo '<xmp>$category_to_migrate: '. print_r( $category, true ) .'</xmp>';
 					echo '<xmp>$term_on_aggregate: '. print_r( $term, true ) .'</xmp>';
 				}
-				if ( $term && $term->parent == 0 ) {
+				if ( $term && 0 == $term->parent ) {
 					$category_ids[] = $term->term_id;
 					continue;
 				}
@@ -369,7 +369,7 @@ class WDS_Multisite_Aggregate {
 					'cat_name'             => $category->name,
 					'category_description' => $category->name,
 					'category_nicename'    => $category->slug,
-					'category_parent'      => ''
+					'category_parent'      => '',
 				), true );
 
 				if (
@@ -381,27 +381,28 @@ class WDS_Multisite_Aggregate {
 				} elseif ( is_numeric( $category_id ) ) {
 					$category_ids[] = $category_id;
 				}
-
 			}
 		}
+
 		if ( $this->debug ) {
 			wp_die( '<xmp>$category_ids_to_add_to_post: '. print_r( $category_ids, true ) .'</xmp>' );
 		}
+
 		$global_post = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->posts} WHERE guid IN (%s,%s)", $post->guid, esc_url( $post->guid ) ) );
-		if ( $post->post_status != 'publish' && is_object( $global_post ) && isset( $global_post->ID ) ) {
+		if ( 'publish' != $post->post_status && is_object( $global_post ) && isset( $global_post->ID ) ) {
 			wp_delete_post( $global_post->ID );
 		} else {
 			if ( isset( $global_post->ID ) && $global_post->ID != '' ) {
 				$post->ID = $global_post->ID; // editing an old post
 
-				foreach( array_keys( $this->global_meta ) as $key ) {
+				foreach ( array_keys( $this->global_meta ) as $key ) {
 					delete_post_meta( $global_post->ID, $key );
 				}
 			} else {
 				unset( $post->ID ); // new post
 			}
 		}
-		if ( $post->post_status == 'publish' ) {
+		if ( 'publish' == $post->post_status ) {
 			$post->ping_status = 'closed';
 			$post->comment_status = 'closed';
 
@@ -411,20 +412,20 @@ class WDS_Multisite_Aggregate {
 			if ( $post_id = wp_insert_post( $post, true ) && ! is_wp_error( $post_id ) ) {
 				$this->imported[] = $post;
 			}
-
 		}
+
 		restore_current_blog();
 	}
 
 	function check_for_site_problems() {
 		global $wpdb;
 
-		if ( !$this->options->get( 'tags_blog_enabled' ) ) {
+		if ( ! $this->options->get( 'tags_blog_enabled' ) ) {
 			return __( 'Multisite Aggregate not enabled.', 'wds-multisite-aggregate' );
 		}
 
 		$tags_blog_id = $this->options->get( 'tags_blog_id' );
-		if ( !$tags_blog_id || $wpdb->blogid == $tags_blog_id ) {
+		if ( ! $tags_blog_id || $tags_blog_id == $wpdb->blogid ) {
 			return __( 'No Multisite Aggregate blog ID, or current blog is Multisite Aggregate blog.', 'wds-multisite-aggregate' );
 		}
 
@@ -435,7 +436,7 @@ class WDS_Multisite_Aggregate {
 
 		$blog_status = get_blog_status( $wpdb->blogid, 'public' );
 
-		if ( $blog_status != 1 && ( $blog_status != 0 || $this->options->get( 'tags_blog_public') == 1 || $this->options->get( 'tags_blog_pub_check') == 0 ) ) {
+		if ( 1 != $blog_status && ( 0 != $blog_status || 1 == $this->options->get( 'tags_blog_public' ) || 0 == $this->options->get( 'tags_blog_pub_check' ) ) ) {
 			return __( "This blog's status is not set to public", 'wds-multisite-aggregate' );
 		}
 
@@ -449,7 +450,7 @@ class WDS_Multisite_Aggregate {
 
 	public function save_meta_fields( $post_id, $post ) {
 		$updated = array();
-		foreach( $this->global_meta as $key => $value ) {
+		foreach ( $this->global_meta as $key => $value ) {
 			if ( $value ) {
 				$updated[ $key ] = add_post_meta( $post_id, $key, $value );
 			}
@@ -462,13 +463,13 @@ class WDS_Multisite_Aggregate {
 
 		$tags_blog_id = $this->options->get( 'tags_blog_id' );
 
-		if ( ! $tags_blog_id || $wpdb->blogid == $tags_blog_id ) {
+		if ( ! $tags_blog_id || $tags_blog_id == $wpdb->blogid ) {
 			return;
 		}
 
 		$post_blog_id = $wpdb->blogid;
 
-		$new = (int) $wpdb->get_var( $wpdb->prepare("SELECT COUNT(*) FROM $wpdb->comments WHERE comment_post_ID = %d AND comment_approved = '1'", $post_id ) );
+		$new = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM $wpdb->comments WHERE comment_post_ID = %d AND comment_approved = '1'", $post_id ) );
 
 		switch_to_blog( $tags_blog_id );
 
@@ -572,21 +573,21 @@ class WDS_Multisite_Aggregate {
 	}
 
 	protected function error( $data ) {
-		if ( defined('WP_CLI') && WP_CLI ) {
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			return array( 'success' => false, 'data' => $data );
 		}
 		wp_send_json_error( $data );
 	}
 
 	protected function success( $data ) {
-		if ( defined('WP_CLI') && WP_CLI ) {
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			return array( 'success' => true, 'data' => $data );
 		}
 		wp_send_json_success( $data );
 	}
 
 	protected function error_if_wpcli( $data ) {
-		if ( defined('WP_CLI') && WP_CLI ) {
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			return array( 'success' => false, 'data' => $data );
 		}
 	}
@@ -601,7 +602,7 @@ class WDS_Multisite_Aggregate {
 	 * @return mixed
 	 */
 	public function __get( $field ) {
-		switch( $field ) {
+		switch ( $field ) {
 			case 'options':
 			case 'admin':
 			case 'remove':
@@ -618,6 +619,6 @@ class WDS_Multisite_Aggregate {
 $WDS_Multisite_Aggregate = new WDS_Multisite_Aggregate();
 $WDS_Multisite_Aggregate->hooks();
 
-if ( defined('WP_CLI') && WP_CLI ) {
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	include_once( dirname( __FILE__ ) .'/includes/WDS_Multisite_Aggregate_CLI.php' );
 }
