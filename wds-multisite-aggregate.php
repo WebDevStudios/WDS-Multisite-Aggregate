@@ -78,6 +78,7 @@ class WDS_Multisite_Aggregate {
 	function hooks() {
 		add_action( 'save_post', array( $this, 'do_post_sync' ), 10, 2 );
 		add_action( 'wds_multisite_aggregate_post_sync', array( $this, 'save_meta_fields' ), 10, 2 );
+		add_action( 'wp_update_comment_count', array( $this, 'do_comment_sync' ) );
 
 		add_action( 'trash_post', array( $this, 'sync_post_delete' ) );
 		add_action( 'delete_post', array( $this, 'sync_post_delete' ) );
@@ -412,6 +413,37 @@ class WDS_Multisite_Aggregate {
 			}
 
 		}
+		restore_current_blog();
+	}
+
+	function do_comment_sync( $post_id ) {
+		global $wpdb;
+
+		$tags_blog_id = $this->options->get( 'tags_blog_id' );
+
+		if ( null === $tags_blog_id ) {
+			return;
+		}
+
+		if ( $wpdb->blogid == $tags_blog_id ) {
+			return;
+		}
+		
+		$post_blog_id = $wpdb->blogid;
+
+		$new = (int) $wpdb->get_var( $wpdb->prepare("SELECT COUNT(*) FROM $wpdb->comments WHERE comment_post_ID = %d AND comment_approved = '1'", $post_id ) );
+
+		switch_to_blog( $tags_blog_id );
+
+		$guid = "{$post_blog_id}.{$post_id}";
+
+		$global_post_id = $wpdb->get_var( $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE guid IN (%s,%s)", $guid, esc_url( $guid ) ) );
+
+		if ( null !== $global_post_id ) {
+			$wpdb->update( $wpdb->posts, array( 'comment_count' => $new ), array( 'ID' => $global_post_id ) );
+			clean_post_cache( $global_post_id );
+		}
+
 		restore_current_blog();
 	}
 
