@@ -12,7 +12,7 @@ Creates a new site where all the most recent posts/pages/etc on a WordPress netw
 
 For performance reasons the number of posts is limited to a user configurable amount, and the blog itself can be made indexable by search engines or not.
 
-Based on WordPress MU Sitewide Tags Pages plugin by Donncha O Caoimh.
+Based on and forked from [WordPress MU Sitewide Tags Pages](https://wordpress.org/plugins/wordpress-mu-sitewide-tags/) plugin by Donncha O Caoimh.
 
 WPCLI is supported:
 `wp multisite_aggregate --help`.
