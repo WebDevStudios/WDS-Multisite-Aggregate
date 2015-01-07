@@ -513,6 +513,7 @@ class WDS_Multisite_Aggregate {
 
 	protected function get_blogs_to_import() {
 		if ( $this->options->get( 'populate_all_blogs' ) ) {
+			global $wpdb;
 			return $wpdb->get_col( "SELECT blog_id FROM $wpdb->blogs ORDER BY blog_id DESC" );
 		}
 		// 'all blogs' not checked? check the blogs_to_import option
