@@ -1,8 +1,8 @@
 # WDS Multisite Aggregate #
 **Contributors:** donncha, imwebgefunden, wpmuguru, WebDevStudios, jtsternberg, Mamaduka  
 **Tags:** wordpressmu  
-**Tested up to:** 3.8.1  
-**Stable tag:** 1.0.0  
+**Tested up to:** 4.2  
+**Stable tag:** 1.0.1  
 **Requires at least:** 3.0  
 
 A central area where all the posts on a WordPress multisite network can be collected.
@@ -30,6 +30,9 @@ WPCLI is supported:
 	8. "Populate Posts" allows you to fill in posts from an existing blog.
 
 ## Changelog ##
+
+### 1.0.1 ###
+* Update for xss vulnerability, https://make.wordpress.org/plugins/2015/04/20/fixing-add_query_arg-and-remove_query_arg-usage
 
 ### 1.0.0 ###
 * Forked from 'MU Sitewide Tags' and rewritten with OOP principles, WordPress coding standards, and extensibility in mind.

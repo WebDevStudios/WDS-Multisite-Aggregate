@@ -1,8 +1,8 @@
 === WDS Multisite Aggregate ===
 Contributors: donncha, imwebgefunden, wpmuguru, WebDevStudios, jtsternberg, Mamaduka
 Tags: wordpressmu
-Tested up to: 3.8.1
-Stable tag: 1.0.0
+Tested up to: 4.2
+Stable tag: 1.0.1
 Requires at least: 3.0
 
 A central area where all the posts on a WordPress MS network can be collected.
@@ -31,6 +31,9 @@ WPCLI is supported:
 
 == Changelog ==
 
+= 1.0.1 =
+* Update for xss vulnerability, https://make.wordpress.org/plugins/2015/04/20/fixing-add_query_arg-and-remove_query_arg-usage
+
 = 1.0.0 =
 * Forked from 'MU Sitewide Tags' and rewritten with OOP principles, WordPress coding standards, and extensibility in mind.
 
@@ -58,3 +61,37 @@ WPCLI is supported:
 * Added option to include pages in tags blog.
 * Added option to include non search engine indexed blogs if tags blog not indexed.
 * Added option for post meta to be copied with post.
+
+== Upgrade Notice ==
+
+= 1.0.1 =
+* Update for xss vulnerability, https://make.wordpress.org/plugins/2015/04/20/fixing-add_query_arg-and-remove_query_arg-usage
+
+= 1.0.0 =
+* Forked from 'MU Sitewide Tags' and rewritten with OOP principles, WordPress coding standards, and extensibility in mind.
+
+= 0.4.2 =
+* duplicate category fix
+* page permalink fix
+* thumbnail size filter
+
+= 0.4.1.1 =
+* Run populate feature in source blog context.
+* Added resource warning for populate feature.
+* Fixed PHP warnings.
+* Only insert categories for published posts.
+
+= 0.4.1 =
+* Move SWT admin to its own screen.
+* Added thumbnail support.
+* Added custom taxonomy (including post formats) support.
+* Update admin screens for WordPress 3.1.
+
+= 0.4.0.1 =
+* Bug fix - only push published content to the tags blog
+
+= 0.4 =
+* Added option to include pages in tags blog.
+* Added option to include non search engine indexed blogs if tags blog not indexed.
+* Added option for post meta to be copied with post.
+

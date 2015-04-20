@@ -60,7 +60,7 @@ class WDS_Multisite_Aggregate_Options {
 		if ( ! isset( $_POST['tags_blog_enabled'] ) || !$_POST['tags_blog_enabled'] ) {
 			if ( isset( $_POST['tags_blog_enabled'] ) && $this->get( 'tags_blog_enabled' ) != $_POST['tags_blog_enabled'] )
 				$this->update( 'tags_blog_enabled', 0, true );
-			wp_redirect( add_query_arg( array( 'updated' => '1' ) ) );
+			wp_redirect( esc_url_raw( add_query_arg( array( 'updated' => '1' ) ) ) );
 			exit;
 		}
 		$this->update( 'tags_blog_enabled', 1 );
@@ -143,7 +143,7 @@ class WDS_Multisite_Aggregate_Options {
 
 		// force write if changes saved
 		$this->update( true );
-		wp_redirect( add_query_arg( array( 'updated' => '1' ) ) );
+		wp_redirect( esc_url_raw( add_query_arg( array( 'updated' => '1' ) ) ) );
 		exit;
 	}
 
