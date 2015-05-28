@@ -77,7 +77,7 @@ class WDS_Multisite_Aggregate {
 
 	function hooks() {
 		add_action( 'save_post', array( $this, 'do_post_sync' ), 10, 2 );
-		add_action( 'wds_multisite_aggregate_post_sync', array( $this, 'save_meta_fields' ), 10, 2 );
+		add_action( 'wds_multisite_aggregate_post_sync', array( $this, 'save_meta_fields' ), 10, 3 );
 		add_action( 'wp_update_comment_count', array( $this, 'do_comment_sync' ) );
 
 		add_action( 'trash_post', array( $this, 'sync_post_delete' ) );
@@ -265,7 +265,8 @@ class WDS_Multisite_Aggregate {
 		$this->post    = $post;
 
 		if ( $this->doing_save_post ) {
-			return $this->add_post_sync_hook();
+			$this->doing_save_post = false;
+			return;
 		}
 
 		if ( $error = $this->check_for_site_problems() ) {
@@ -412,11 +413,8 @@ class WDS_Multisite_Aggregate {
 			$post_id = wp_insert_post( $post, true );
 
 			if ( ! is_wp_error( $post_id ) ) {
-				// copy postmeta 
-				foreach ( $this->global_meta as $meta_key => $meta_value ) {
-					update_post_meta( $post_id, $meta_key, $meta_value );
-				} 
-
+				// do meta sync action
+				do_action( 'wds_multisite_aggregate_post_sync', $post_id, $post, $this->global_meta );
 				$this->imported[] = $post;
 			}
 		}
@@ -450,14 +448,9 @@ class WDS_Multisite_Aggregate {
 		return false;
 	}
 
-	public function add_post_sync_hook() {
-		do_action( 'wds_multisite_aggregate_post_sync', $this->post_id, $this->post );
-		$this->doing_save_post = false;
-	}
-
-	public function save_meta_fields( $post_id, $post ) {
+	public function save_meta_fields( $post_id, $post, $global_meta ) {
 		$updated = array();
-		foreach ( $this->global_meta as $key => $value ) {
+		foreach ( $global_meta as $key => $value ) {
 			if ( $value ) {
 				$updated[ $key ] = add_post_meta( $post_id, $key, $value );
 			}
