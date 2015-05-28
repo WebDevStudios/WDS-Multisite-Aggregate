@@ -409,7 +409,14 @@ class WDS_Multisite_Aggregate {
 			// Use the category IDs in the post
 			$post->post_category = $category_ids;
 			$this->doing_save_post = true;
-			if ( $post_id = wp_insert_post( $post, true ) && ! is_wp_error( $post_id ) ) {
+			$post_id = wp_insert_post( $post, true );
+
+			if ( ! is_wp_error( $post_id ) ) {
+				// copy postmeta 
+				foreach ( $this->global_meta as $meta_key => $meta_value ) {
+					update_post_meta( $post_id, $meta_key, $meta_value );
+				} 
+
 				$this->imported[] = $post;
 			}
 		}
@@ -513,6 +520,7 @@ class WDS_Multisite_Aggregate {
 
 	protected function get_blogs_to_import() {
 		if ( $this->options->get( 'populate_all_blogs' ) ) {
+			global $wpdb;
 			return $wpdb->get_col( "SELECT blog_id FROM $wpdb->blogs ORDER BY blog_id DESC" );
 		}
 		// 'all blogs' not checked? check the blogs_to_import option
