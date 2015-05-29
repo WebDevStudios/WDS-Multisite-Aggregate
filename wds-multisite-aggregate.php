@@ -295,17 +295,17 @@ class WDS_Multisite_Aggregate {
 		$post_blog_id = $wpdb->blogid;
 		$post->guid = "{$post_blog_id}.{$post_id}";
 
-		$this->global_meta = array();
+		$this->meta_to_sync = array();
 		$meta_keys = apply_filters( 'sitewide_tags_meta_keys', $this->options->get( 'tags_blog_postmeta', array() ) );
 		if ( is_array( $meta_keys ) && ! empty( $meta_keys ) ) {
 			foreach ( $meta_keys as $key ) {
-				$this->global_meta[ $key ] = get_post_meta( $post->ID, $key, true );
+				$this->meta_to_sync[ $key ] = get_post_meta( $post->ID, $key, true );
 			}
 		}
 		unset( $meta_keys );
 
-		$this->global_meta['permalink'] = get_permalink( $post_id );
-		$this->global_meta['blogid'] = $post_blog_id; // org_blog_id
+		$this->meta_to_sync['permalink'] = get_permalink( $post_id );
+		$this->meta_to_sync['blogid'] = $post_blog_id; // org_blog_id
 
 		if ( $this->options->get( 'tags_blog_thumbs' ) && ( $thumb_id = get_post_thumbnail_id( $post->ID ) ) ) {
 
@@ -314,15 +314,15 @@ class WDS_Multisite_Aggregate {
 
 			// back-compat
 			if ( is_string( $thumb_sizes ) ) {
-				$this->global_meta['thumbnail_html'] = wp_get_attachment_image( $thumb_id, $thumb_sizes );
+				$this->meta_to_sync['thumbnail_html'] = wp_get_attachment_image( $thumb_id, $thumb_sizes );
 			} else {
 				// back-compat
-				$this->global_meta['thumbnail_html'] = wp_get_attachment_image( $thumb_id, 'thumbnail' );
+				$this->meta_to_sync['thumbnail_html'] = wp_get_attachment_image( $thumb_id, 'thumbnail' );
 			}
 
 			// new hawtness
 			foreach ( (array) $thumb_sizes as $thumb_size ) {
-				$this->global_meta[ "thumbnail_html_$thumb_size" ] = wp_get_attachment_image( $thumb_id, $thumb_size );
+				$this->meta_to_sync[ "thumbnail_html_$thumb_size" ] = wp_get_attachment_image( $thumb_id, $thumb_size );
 			}
 		}
 
@@ -396,7 +396,7 @@ class WDS_Multisite_Aggregate {
 			if ( isset( $global_post->ID ) && $global_post->ID != '' ) {
 				$post->ID = $global_post->ID; // editing an old post
 
-				foreach ( array_keys( $this->global_meta ) as $key ) {
+				foreach ( array_keys( $this->meta_to_sync ) as $key ) {
 					delete_post_meta( $global_post->ID, $key );
 				}
 			} else {
@@ -414,7 +414,7 @@ class WDS_Multisite_Aggregate {
 
 			if ( ! is_wp_error( $post_id ) ) {
 				// do meta sync action
-				do_action( 'wds_multisite_aggregate_post_sync', $post_id, $post, $this->global_meta );
+				do_action( 'wds_multisite_aggregate_post_sync', $post_id, $post, $this->meta_to_sync );
 				$this->imported[] = $post;
 			}
 		}
@@ -448,9 +448,9 @@ class WDS_Multisite_Aggregate {
 		return false;
 	}
 
-	public function save_meta_fields( $post_id, $post, $global_meta ) {
+	public function save_meta_fields( $post_id, $post, $meta_to_sync ) {
 		$updated = array();
-		foreach ( $global_meta as $key => $value ) {
+		foreach ( $meta_to_sync as $key => $value ) {
 			if ( $value ) {
 				$updated[ $key ] = add_post_meta( $post_id, $key, $value );
 			}
