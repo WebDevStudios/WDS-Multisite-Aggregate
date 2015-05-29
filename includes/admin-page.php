@@ -29,7 +29,7 @@
 			return false;
 		}
 		// wp_die( '<xmp>: '. print_r( $options->get( 'all' ), true ) .'</xmp>' );
-		$tags_blog_postmeta = $options->get( 'checked' );
+		$tags_blog_postmeta = $options->get( 'tags_blog_postmeta' );
 		$blogs_to_import    = $options->get( 'blogs_to_import', array() );
 		$all_blogs          = $options->get( 'populate_all_blogs' );
 		?>
