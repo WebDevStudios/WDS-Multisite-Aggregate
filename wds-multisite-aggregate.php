@@ -3,7 +3,7 @@
 Plugin Name: WDS Multisite Aggregate
 Plugin URI: https://github.com/WebDevStudios/WDS-Multisite-Aggregate
 Description: Creates a blog where all the most recent posts on a WordPress network may be found. Based on WordPress MU Sitewide Tags Pages plugin by Donncha O Caoimh. WP-CLI: `wp multisite_aggregate --help`.
-Version: 1.0.1
+Version: 1.0.2
 Author: WebDevStudios
 Author URI: http://webdevstudios.com
 */

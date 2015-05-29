@@ -1,8 +1,8 @@
 === WDS Multisite Aggregate ===
-Contributors: donncha, imwebgefunden, wpmuguru, WebDevStudios, jtsternberg, Mamaduka
+Contributors: WebDevStudios, jtsternberg, Mamaduka, mmcachran, donncha, imwebgefunden, wpmuguru
 Tags: wordpressmu
-Tested up to: 4.2
-Stable tag: 1.0.1
+Tested up to: 4.2.2
+Stable tag: 1.0.2
 Requires at least: 3.0
 
 A central area where all the posts on a WordPress MS network can be collected.
@@ -30,6 +30,10 @@ WPCLI is supported:
 	8. "Populate Posts" allows you to fill in posts from an existing blog.
 
 == Changelog ==
+
+= 1.0.2 =
+* Fix meta not being properly copied to aggregate post.
+* Fix the setting for post-meta keys. (It wasn't displaying the saved value)
 
 = 1.0.1 =
 * Update for xss vulnerability, https://make.wordpress.org/plugins/2015/04/20/fixing-add_query_arg-and-remove_query_arg-usage
@@ -63,6 +67,10 @@ WPCLI is supported:
 * Added option for post meta to be copied with post.
 
 == Upgrade Notice ==
+
+= 1.0.2 =
+* Fix meta not being properly copied to aggregate post.
+* Fix the setting for post-meta keys. (It wasn't displaying the saved value)
 
 = 1.0.1 =
 * Update for xss vulnerability, https://make.wordpress.org/plugins/2015/04/20/fixing-add_query_arg-and-remove_query_arg-usage
