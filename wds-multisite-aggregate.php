@@ -450,7 +450,7 @@ class WDS_Multisite_Aggregate {
 
 	public function save_meta_fields( $post_id, $post, $meta_to_sync ) {
 		$updated = array();
-		foreach ( $meta_to_sync as $key => $value ) {
+		foreach ( (array) $meta_to_sync as $key => $value ) {
 			if ( $value ) {
 				$updated[ $key ] = add_post_meta( $post_id, $key, $value );
 			}
