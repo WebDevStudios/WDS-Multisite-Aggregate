@@ -17,6 +17,8 @@ Based on and forked from [WordPress MU Sitewide Tags Pages](https://wordpress.or
 WPCLI is supported:
 `wp multisite_aggregate --help`.
 
+[Pluginize](https://pluginize.com/?utm_source=wds-multisite-agg&utm_medium=text&utm_campaign=wporg) was launched in 2016 by [WebDevStudios](https://webdevstudios.com/) to promote, support, and house all of their [WordPress products](https://pluginize.com/shop/?utm_source=wds-multisite-agg&utm_medium=text&utm_campaign=wporg). Pluginize is not only creating new products for WordPress all the time, but also provides [ongoing support and development for WordPress community favorites like CPTUI](https://wordpress.org/plugins/custom-post-type-ui/), [CMB2](https://wordpress.org/plugins/cmb2/), and more.
+
 == Install ==
 1. Install in your plugins directory in the usual way and network activate the plugin. There is no need to put it in mu-plugins.
 2. Login as a site administrator and go to Super Admin->Sitewide Tags.
