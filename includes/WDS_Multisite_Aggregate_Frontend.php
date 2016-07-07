@@ -17,7 +17,7 @@ class WDS_Multisite_Aggregate_Frontend {
 
 		$tags_blog_id = $this->options->get( 'tags_blog_id' );
 
-		if ( !$tags_blog_id ) {
+		if ( ! $tags_blog_id ) {
 			return $link;
 		}
 
@@ -41,7 +41,7 @@ class WDS_Multisite_Aggregate_Frontend {
 
 		$tags_blog_id = $this->options->get( 'tags_blog_id' );
 
-		if ( !$tags_blog_id ) {
+		if ( ! $tags_blog_id ) {
 			return $html;
 		}
 
@@ -53,5 +53,4 @@ class WDS_Multisite_Aggregate_Frontend {
 
 		return $thumb ? $thumb : $html;
 	}
-
 }

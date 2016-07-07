@@ -23,5 +23,4 @@ class WDS_Multisite_Aggregate_Admin {
 	function admin_page() {
 		require_once( 'admin-page.php' );
 	}
-
 }

@@ -5,32 +5,36 @@ class WDS_Multisite_Aggregate_Options {
 	function get( $key, $default = false ) {
 		static $tags_options = '1';
 		if ( $tags_options == '1' ) {
-			$tags_options = get_site_option('sitewide_tags_blog');
+			$tags_options = get_site_option( 'sitewide_tags_blog' );
 		}
 		if ( is_array( $tags_options ) ) {
-			if ( $key == 'all' )
+			if ( $key == 'all' ) {
 				return $tags_options;
-			elseif ( isset( $tags_options[$key] ) )
-				return $tags_options[$key];
+			} elseif ( isset( $tags_options[ $key ] ) ) {
+				return $tags_options[ $key ];
+			}
 		}
-		return get_site_option($key, $default);
+		return get_site_option( $key, $default );
 	}
 
 	function update( $key, $value = '', $flush = false ) {
 		static $tags_options = '1';
 		if ( $tags_options == '1' ) {
-			// don't save unless something has changed
-			if ( $key === true )
+			// Don't save unless something has changed.
+			if ( $key === true ) {
 				return;
-			$tags_options = get_site_option('sitewide_tags_blog');
+			}
+			$tags_options = get_site_option( 'sitewide_tags_blog' );
 		}
-		if ( !$tags_options ) {
+		if ( ! $tags_options ) {
 			$tags_options = array();
 		}
-		if ( $key !== true)
-			$tags_options[$key] = $value;
-		if ( $flush || $key === true )
+		if ( $key !== true) {
+			$tags_options[ $key ] = $value;
+		}
+		if ( $flush || $key === true ) {
 			return update_site_option( 'sitewide_tags_blog', $tags_options );
+		}
 	}
 
 	public function hooks() {
@@ -47,7 +51,7 @@ class WDS_Multisite_Aggregate_Options {
 	function update_options() {
 		global $wpdb, $current_site, $wp_version;
 
-		if ( ! isset( $_POST['tags_blog_enabled'] ) || !$_POST['tags_blog_enabled'] ) {
+		if ( ! isset( $_POST['tags_blog_enabled'] ) || ! $_POST['tags_blog_enabled'] ) {
 			if ( $this->get( 'tags_blog_enabled' ) != $_POST['tags_blog_enabled'] )
 				$this->update( 'tags_blog_enabled', 0, true );
 			wp_redirect( add_query_arg( array( 'updated' => '1' ) ) );
@@ -57,10 +61,11 @@ class WDS_Multisite_Aggregate_Options {
 
 		if ( ( isset( $_POST['tags_blog'] ) || isset( $_POST['tags_blog_main_blog'] ) ) && isset( $_POST['tags_blog_public'] ) ) {
 			if ( isset( $_POST['tags_blog_main_blog'] ) && 1 == $_POST['tags_blog_main_blog'] ) {
-				if ( $current_site->blog_id )
+				if ( $current_site->blog_id ) {
 					$id = $current_site->blog_id;
-				else
+				} else {
 					$id = $wpdb->get_var( "SELECT blog_id FROM {$wpdb->blogs} WHERE domain = '{$current_site->domain}' AND path = '{$current_site->path}'" );
+				}
 				if ( $id ) {
 					$this->update( 'tags_blog_id', $id );
 					$this->update( 'tags_blog_main_blog', 1 );
@@ -91,7 +96,7 @@ class WDS_Multisite_Aggregate_Options {
 			$aggregate_blog_public = (int) $_POST['tags_blog_public'];
 			$this->update( 'tags_blog_public', $aggregate_blog_public );
 			update_blog_option( $aggregate_blog_id, 'blog_public', $aggregate_blog_public );
-			update_blog_status( $aggregate_blog_id, 'public', $aggregate_blog_public);
+			update_blog_status( $aggregate_blog_id, 'public', $aggregate_blog_public );
 		}
 
 		$options_as_integers = array(
@@ -112,7 +117,6 @@ class WDS_Multisite_Aggregate_Options {
 			if ( ( $set = $this->make_integer_from_request( $option_key ) ) && $set != $this->get( $option_key ) ) {
 				$this->update( $option_key, $set );
 			}
-
 		}
 
 		if ( ( $set = $this->make_integer_from_request( 'tags_blog_pub_check' ) ) && $set != $this->get( 'tags_blog_pub_check' ) ) {
@@ -127,7 +131,7 @@ class WDS_Multisite_Aggregate_Options {
 			$this->update( 'tags_blog_postmeta', '' );
 		}
 
-		// force write if changes saved
+		// Force write if changes saved.
 		$this->update( true );
 		wp_redirect( add_query_arg( array( 'updated' => '1' ) ) );
 		exit;

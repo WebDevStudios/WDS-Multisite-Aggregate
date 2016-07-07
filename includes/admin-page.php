@@ -1,7 +1,7 @@
 <div class="wrap">
 	<?php
 	$options = $this->options;
-	if( !empty( $_REQUEST['updated'] ) && '1' == $_REQUEST['updated'] )
+	if ( !empty( $_REQUEST['updated'] ) && '1' == $_REQUEST['updated'] )
 		echo '<div id="message" class="updated fade"><p><strong>' . __( 'Settings updated.', 'wpmu-mu-sitewide-tags' ) . '</strong></p></div>';
 	?>
 	<h2><?php echo $this->title; ?></h2>
@@ -9,7 +9,7 @@
 		<input type="hidden" name="action" value="sitewidetags" />
 		<?php
 		wp_nonce_field('wds-multisite-aggregate');
-		if( $options->get( 'tags_blog_public' ) === null )
+		if ( $options->get( 'tags_blog_public' ) === null )
 			add_site_option( 'sitewide_tags_blog', array( 'tags_blog_public' => 1 ) );
 
 		$tags_blog_enable = $options->get( 'tags_blog_enabled' );
@@ -18,9 +18,9 @@
 			<tr valign="top">
 				<th scope="row"><?php _e('Tags Blog','wds-multisite-aggregate') ?></th>
 				<td>
-					<label><input name="tags_blog_enabled" type="checkbox" id="tags_blog_enabled" value="1" <?php if( $tags_blog_enable == 1 ) { echo "checked='checked'"; } ?> /> <strong><?php _e("Enabled","wpmu-sitewide-tags"); ?></strong></label><br />
+					<label><input name="tags_blog_enabled" type="checkbox" id="tags_blog_enabled" value="1" <?php if ( $tags_blog_enable == 1 ) { echo "checked='checked'"; } ?> /> <strong><?php _e("Enabled","wpmu-sitewide-tags"); ?></strong></label><br />
 		<?php
-		if( !$tags_blog_enable ) {
+		if ( !$tags_blog_enable ) {
 			echo "</td></tr></table>
 				<div class='submit'><input class='button-primary' type='submit' value='" . __( 'Update Settings', 'wpmu-mu-sitewide-tags' ) . "' /></div>
 				</form>
@@ -36,27 +36,27 @@
 		<p class="description"><?php _e( "You can create your post archive in a specific 'tags' blog of your choosing, or you can use the main blog of your site. Each has it's own pros and cons.","wpmu-sitewide-tags"); ?></p>
 		<ol><li><p><input name="tags_blog" type="text" id="tags_blog" style="width: 35%" value="<?php echo esc_attr( $options->get( 'tags_blog', 'Network Posts' ) ); ?>" size="45" /></p>
 		<p class="description"><?php _e('<strong>Blogname</strong> of the blog your global tags and posts will live in. Blog will be created.','wds-multisite-aggregate') ?></p></li>
-		<li><p><label><input name="tags_blog_main_blog" type="checkbox" id="tags_blog_main_blog" value="1" <?php if( $options->get( 'tags_blog_main_blog', 0 ) == 1 ) { echo "checked='checked'"; } ?> /> <strong><?php _e( "Post to main blog","wpmu-sitewide-tags" ); ?></strong></label></p>
+		<li><p><label><input name="tags_blog_main_blog" type="checkbox" id="tags_blog_main_blog" value="1" <?php if ( $options->get( 'tags_blog_main_blog', 0 ) == 1 ) { echo "checked='checked'"; } ?> /> <strong><?php _e( "Post to main blog","wpmu-sitewide-tags" ); ?></strong></label></p>
 		<p class="description"><?php _e('Create posts in your main blog. All posts will appear on the front page of your site. Remember to to add a post loop to home.php in the theme directory if it exists.','wds-multisite-aggregate') ?></p></li></ol>
 				</td>
 			</tr>
 			<tr valign="top">
-				<th scope="row"><?php _e('Max Posts','wds-multisite-aggregate') ?></th>
+				<th scope="row"><?php esc_html_e( 'Max Posts', 'wds-multisite-aggregate' ) ?></th>
 				<td>
 					<p><input name="tags_max_posts" type="text" id="tags_max_posts" style="width: 15%" value="<?php echo intval( $options->get( 'tags_max_posts', 5000 ) ); ?>" size="5" /></p>
-					<p class="description"><?php _e('The maximum number of posts stored in the tags blog.','wds-multisite-aggregate') ?></p>
+					<p class="description"><?php esc_html_e( 'The maximum number of posts stored in the tags blog.', 'wds-multisite-aggregate' ) ?></p>
 				</td>
 			</tr>
 			<tr valign="top">
 				<th scope="row"><?php _e('Include Pages','wds-multisite-aggregate') ?></th>
 				<td>
-					<label><input name="tags_blog_pages" type="checkbox" id="tags_blog_pages" value="1" <?php if( $tags_blog_pages == 1 ) { echo "checked='checked'"; } ?> /> <strong><?php _e("Enabled","wpmu-sitewide-tags"); ?></strong></label>
+					<label><input name="tags_blog_pages" type="checkbox" id="tags_blog_pages" value="1" <?php if ( $tags_blog_pages == 1 ) { echo "checked='checked'"; } ?> /> <strong><?php _e("Enabled","wpmu-sitewide-tags"); ?></strong></label>
 				</td>
 			</tr>
 			<tr valign="top">
 				<th scope="row"><?php _e('Include Post Thumbnails','wds-multisite-aggregate') ?></th>
 				<td>
-					<label><input name="tags_blog_thumbs" type="checkbox" id="tags_blog_thumbs" value="1" <?php if( $tags_blog_thumbs == 1 ) { echo "checked='checked'"; } ?> /> <strong><?php _e("Enabled","wpmu-sitewide-tags"); ?></strong></label>
+					<label><input name="tags_blog_thumbs" type="checkbox" id="tags_blog_thumbs" value="1" <?php if ( $tags_blog_thumbs == 1 ) { echo "checked='checked'"; } ?> /> <strong><?php _e("Enabled","wpmu-sitewide-tags"); ?></strong></label>
 				</td>
 			</tr>
 			<tr valign="top">
@@ -67,16 +67,16 @@
 
 					<p><?php _e('Will your tags pages be visible to Google and other search engines?','wds-multisite-aggregate'); ?></p>
 
-		<?php if( $tags_blog_public == 1 ) { ?>
+		<?php if ( $tags_blog_public == 1 ) { ?>
 					<input name="tags_blog_pub_check" type="hidden" value="0" />
 		<?php } else { ?>
 				</td>
 			</tr>
 			<tr valign="top">
-				<th scope="row"><?php _e('Non-Public Blogs','wds-multisite-aggregate') ?></th>
+				<th scope="row"><?php esc_html_e( 'Non-Public Blogs', 'wds-multisite-aggregate' ) ?></th>
 				<td>
-					<p><label><input name="tags_blog_pub_check" type="checkbox" id="tags_blog_pub_check" value="1" <?php if( $tags_blog_pub_check == 1 ) { echo "checked='checked'"; } ?> /> <strong><?php _e("Enabled","wpmu-sitewide-tags"); ?></strong></label></p>
-					<p class="description"><?php _e('Include posts from blogs not indexed by search engines.','wds-multisite-aggregate'); ?></p>
+					<p><label><input name="tags_blog_pub_check" type="checkbox" id="tags_blog_pub_check" value="1" <?php if ( $tags_blog_pub_check == 1 ) { echo "checked='checked'"; } ?> /> <strong><?php esc_html_e( 'Enabled', 'wpmu-sitewide-tags' ); ?></strong></label></p>
+					<p class="description"><?php esc_html_e( 'Include posts from blogs not indexed by search engines.', 'wds-multisite-aggregate' ); ?></p>
 			<?php } ?>
 				</td>
 				<tr valign="top">
