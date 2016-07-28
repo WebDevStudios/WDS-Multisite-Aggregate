@@ -353,6 +353,9 @@ class WDS_Multisite_Aggregate {
 
 		$category_ids = array();
 		if ( is_array( $post_categories ) && ! empty( $post_categories ) && 'publish' == $post->post_status ) {
+			// Filter categories before handling
+			$post_categories = apply_filters( 'wds_multisite_aggregate_filter_categories', $post_categories );
+
 			foreach ( $post_categories as $t => $category ) {
 				$term = get_term_by( 'slug', $category->slug, 'category' );
 				$term = apply_filters( 'sitewide_tags_get_term', $term, $category, $this );
