@@ -1,5 +1,5 @@
 === WDS Multisite Aggregate ===
-Contributors: WebDevStudios, jtsternberg, Mamaduka, mmcachran, donncha, imwebgefunden, wpmuguru
+Contributors: WebDevStudios, jtsternberg, Mamaduka, mmcachran, donncha, imwebgefunden, wpmuguru, pluginize
 Tags: wordpressmu
 Tested up to: 4.6
 Stable tag: 1.0.2
