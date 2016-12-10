@@ -1,7 +1,7 @@
 === WDS Multisite Aggregate ===
 Contributors: WebDevStudios, jtsternberg, Mamaduka, mmcachran, donncha, imwebgefunden, wpmuguru, pluginize
 Tags: wordpressmu
-Tested up to: 4.6
+Tested up to: 4.7
 Stable tag: 1.0.2
 Requires at least: 3.0
 
