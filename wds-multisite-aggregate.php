@@ -54,6 +54,7 @@ class WDS_Multisite_Aggregate {
 	protected $total_imported  = 0;
 	protected $doing_save_post = false;
 	protected $debug           = false;
+	protected static $orig_img_url_key = '_wds_orig_image_url';
 
 	public function __construct() {
 		// Options setter/getter and handles updating options on save
@@ -79,11 +80,11 @@ class WDS_Multisite_Aggregate {
 		add_action( 'save_post', array( $this, 'do_post_sync' ), 10, 2 );
 		add_action( 'wds_multisite_aggregate_post_sync', array( $this, 'save_meta_fields' ), 10, 3 );
 		add_action( 'wp_update_comment_count', array( $this, 'do_comment_sync' ) );
-        add_action( 'updated_post_meta', array( $this, 'set_thumbnail' ), 10, 4 );
+        add_action( 'updated_post_meta', array( $this, 'update_thumbnail_meta' ), 10, 4 );
 
 		add_action( 'trash_post', array( $this, 'sync_post_delete' ) );
 		add_action( 'delete_post', array( $this, 'sync_post_delete' ) );
-		add_action( 'deleted_post_meta', array( $this, 'delete_thumbnail' ), 10, 3 );
+		add_action( 'deleted_post_meta', array( $this, 'delete_thumbnail_meta' ), 10, 3 );
 
 		if ( ! empty( $_GET['action'] ) && 'populate_posts_from_blog' == $_GET['action'] ) {
 			define( 'WDS_Multisite_Aggregate', true );
@@ -309,7 +310,12 @@ class WDS_Multisite_Aggregate {
 		$this->meta_to_sync['permalink'] = get_permalink( $post_id );
 		$this->meta_to_sync['blogid'] = $post_blog_id; // org_blog_id
 
-		// custom taxonomies
+        // Post thumbnail
+        if ( $this->options->get( 'tags_blog_thumbs' ) && ( $thumb_id = get_post_thumbnail_id( $post->ID ) ) ) {
+            $this->meta_to_sync['thumbnail_url'] = wp_get_attachment_url( $thumb_id );
+        }
+
+        // custom taxonomies
 		$taxonomies = apply_filters( 'sitewide_tags_custom_taxonomies', array() );
 		if ( ! empty( $taxonomies ) && 'publish' == $post->post_status ) {
 			$registered_tax = array_diff( get_taxonomies(), array( 'post_tag', 'category', 'link_category', 'nav_menu' ) );
@@ -436,6 +442,10 @@ class WDS_Multisite_Aggregate {
 
 	public function save_meta_fields( $post_id, $post, $meta_to_sync ) {
 		$updated = array();
+		if ( $this->options->get( 'tags_blog_thumbs' ) && !empty( $meta_to_sync[ 'thumbnail_url' ] ) ) {
+		    $this->set_thumbnail_by_url( $meta_to_sync[ 'thumbnail_url' ], $post_id );
+		    unset( $meta_to_sync[ 'thumbnail_url' ]);
+        }
 		foreach ( (array) $meta_to_sync as $key => $value ) {
 			if ( $value ) {
 				$updated[ $key ] = add_post_meta( $post_id, $key, $value );
@@ -444,18 +454,54 @@ class WDS_Multisite_Aggregate {
 		// return $this->error( compact( 'post_id', 'updated', 'post' ) );
 	}
 
-	public function set_thumbnail( $meta_id, $post_id, $meta_key, $thumbnail_id ) {
+    /**
+     *
+     * When the thumbnail is set and nothing else is done in the admin, no 'save_post' action is fired.
+     * We need to watch at a lower level (the actual thumbnail meta value) to ensure proper sync to tags site.
+     *
+     * @param integer $meta_id Unused; first param for the filter
+     * @param integer $post_id The post possibly getting a new thumbnail
+     * @param string $meta_key The meta key. We have to to check all meta values because there's no filter specific to thumbnails
+     * @param mixed integer|string $thumbnail_id The meta value. If the key is the one we're looking for, this will be the ID to an image attachment.
+     */
+    public function update_thumbnail_meta( $meta_id, $post_id, $meta_key, $thumbnail_id ) {
+        // Many, many reasons to bail out. We want to prevent needless calls to switch_to_blog. Here we go:
 
-        if ( ! $this->options->get( 'tags_blog_thumbs' ) || '_thumbnail_id' != $meta_key ) {
+        // Not updating a thumbnail
+        if ( '_thumbnail_id' != $meta_key ) {
             return;
         }
 
-        $tags_blog_id = $this->options->get( 'tags_blog_id' );
+        // Thumbnail is empty: probably means we're deleting, which we'll cover with the delete_meta hook
+        if ( empty( $thumbnail_id ) ) {
+            return;
+        }
 
+        $post = get_post( $post_id );
+
+        // Only published posts are synced
+        if ( 'publish' != $post->post_status ) {
+            return;
+        }
+
+        // Not syncing thumbnails (network config)
+        if ( ! $this->options->get( 'tags_blog_thumbs' ) ) {
+            return;
+        }
+
+        // Not an allowed post type
+        $allowed_post_types = apply_filters( 'sitewide_tags_allowed_post_types', array( 'post' => true ) );
+        if ( ! isset( $allowed_post_types[ $post->post_type ] ) || ! $allowed_post_types[ $post->post_type ] ) {
+            return;
+        }
+
+        // We're in the tags/aggregating blog/site
+        $tags_blog_id = $this->options->get( 'tags_blog_id' );
         if ( ! $tags_blog_id || $tags_blog_id == get_current_blog_id() ) {
             return;
         }
 
+        // We're in the clear, let's go!
         $post_blog_id = get_current_blog_id();
 
         $thumbnail_url = wp_get_attachment_url( $thumbnail_id );
@@ -465,34 +511,63 @@ class WDS_Multisite_Aggregate {
         $global_post_id = $this->get_global_post_id( $post_blog_id, $post_id );
 
         if ( null !== $global_post_id ) {
-            $attachment_id = $this->import_image( $thumbnail_url, $global_post_id );
-
-            if ( !$attachment_id ) {
-                error_log( "Failed to add featured image to post $global_post_id" );
-            } else {
-                set_post_thumbnail( $global_post_id, $attachment_id );
-            }
+            $this->set_thumbnail_by_url( $thumbnail_url, $global_post_id );
         }
 
         restore_current_blog();
 
     }
 
-    private function import_image( $image_url, $post_id ) {
+    /**
+     *
+     * Takes an image's URL, imports image in WP and assigns it as a post thumbnail
+     *
+     * @param string $thumbnail_url Image URL
+     * @param integer $post_id ID of the post for which the imported image will become the thumbnail
+     */
+    private function set_thumbnail_by_url( $thumbnail_url, $post_id ) {
+        // Already imported? Just grab the ID
+        $attachment_id = $this->get_image_id_by_orig_url( $thumbnail_url );
+
+        // Not imported yet, import and associate with current post
+        if ( !$attachment_id ) {
+            $attachment_id = $this->import_image( $thumbnail_url, $post_id );
+        }
+
+        if ( !$attachment_id ) {
+            error_log( "Failed to add featured image to post $post_id" );
+        } else {
+            set_post_thumbnail( $post_id, $attachment_id );
+        }
+    }
+
+    /**
+     *
+     * Takes an image's URL, adds the image to the Media Library and associates it with a post,
+     * as if it was uploaded to said post.
+     *
+     * @param string $external_image_url Image URL
+     * @param integer $post_id ID of post to attach image to
+     * @return bool|int Attachement ID or false when something failed
+     */
+    private function import_image($external_image_url, $post_id ) {
         // Get the image from the original site and download to new.
-        $thumbnail_url = media_sideload_image( $image_url, $post_id, null, 'src' );
-        if ( is_wp_error( $thumbnail_url ) ) {
+        $image_url = media_sideload_image( $external_image_url, $post_id, null, 'src' );
+        if ( is_wp_error( $image_url ) ) {
             return false;
         }
 
         // Get the ID of the attachment.
-        $thumbnail_id = $this->get_image_id( $thumbnail_url );
+        $image_id = $this->get_image_id( $image_url );
 
         // Generate thumbnails, because WP usually do this for us.
-        wp_generate_attachment_metadata( $thumbnail_id, get_attached_file( $thumbnail_id ) );
+        wp_generate_attachment_metadata( $image_id, get_attached_file( $image_id ) );
+
+        // Save original URL to meta field for later lookups, used to prevent importing same image multiple times
+        update_post_meta( $image_id, $this::$orig_img_url_key, $external_image_url );
 
         // Add the featured image to the target post.
-        return $thumbnail_id;
+        return $image_id;
     }
 
     /**
@@ -520,6 +595,21 @@ class WDS_Multisite_Aggregate {
         }
 
         return false;
+    }
+
+
+    protected function get_image_id_by_orig_url( $orig_image_url ) {
+        $candidates = get_posts( array(
+           'post_type' => 'attachment',
+            'post_status' => 'any',
+            'meta_query' => array(
+                array(
+                    'key' => $this::$orig_img_url_key,
+                    'value' => $orig_image_url,
+                )
+            )
+        ));
+        return empty( $candidates ) ? false : $candidates[0]->ID;
     }
 
 
@@ -574,7 +664,16 @@ class WDS_Multisite_Aggregate {
 		restore_current_blog();
 	}
 
-	function delete_thumbnail( $meta_ids, $post_id, $meta_key ) {
+    /**
+     *
+     * Deletes the thumbnail from the tags site when it is deleted from a synced post (which is not deleted itself)
+     *
+     * @param array $meta_ids   Unused, first parameter of the filter
+     * @param integer $post_id  Post losing its thumbnail
+     * @param string $meta_key  Meta key label. Since there is no filter specific for thumbnails,
+     *                          we have to hook into the generic 'meta' filter and inspect the key
+     */
+    function delete_thumbnail_meta($meta_ids, $post_id, $meta_key ) {
         if ( '_thumbnail_id' != $meta_key ) {
             return;
         }
