@@ -80,7 +80,7 @@ class WDS_Multisite_Aggregate {
 		add_action( 'save_post', array( $this, 'do_post_sync' ), 10, 2 );
 		add_action( 'wds_multisite_aggregate_post_sync', array( $this, 'save_meta_fields' ), 10, 3 );
 		add_action( 'wp_update_comment_count', array( $this, 'do_comment_sync' ) );
-        add_action( 'updated_post_meta', array( $this, 'update_thumbnail_meta' ), 10, 4 );
+		add_action( 'updated_post_meta', array( $this, 'update_thumbnail_meta' ), 10, 4 );
 
 		add_action( 'trash_post', array( $this, 'sync_post_delete' ) );
 		add_action( 'delete_post', array( $this, 'sync_post_delete' ) );
@@ -311,11 +311,31 @@ class WDS_Multisite_Aggregate {
 		$this->meta_to_sync['blogid'] = $post_blog_id; // org_blog_id
 
         // Post thumbnail
-        if ( $this->options->get( 'tags_blog_thumbs' ) && ( $thumb_id = get_post_thumbnail_id( $post->ID ) ) ) {
-            $this->meta_to_sync['thumbnail_url'] = wp_get_attachment_url( $thumb_id );
-        }
-
-        // custom taxonomies
+		if ( $this->options->get( 'tags_blog_thumbs' ) && ( $thumb_id = get_post_thumbnail_id( $post->ID ) ) ) {
+			
+			// URL for later import in aggregating blog
+			$this->meta_to_sync['thumbnail_url'] = wp_get_attachment_url( $thumb_id );
+			
+			// Back compatibility
+			$thumb_sizes = apply_filters( 'sitewide_tags_thumb_size', array(
+				'thumbnail' ) );
+			
+			// Backer (!) compatibility
+			if ( is_string( $thumb_sizes ) ) {
+				$this->meta_to_sync['thumbnail_html'] = wp_get_attachment_image( $thumb_id, $thumb_sizes );
+			} else {
+				// back-compat
+				$this->meta_to_sync['thumbnail_html'] = wp_get_attachment_image( $thumb_id, 'thumbnail' );
+			}
+			
+			// new(ish) hawtness
+			foreach ( (array) $thumb_sizes as $thumb_size ) {
+				$this->meta_to_sync[ "thumbnail_html_$thumb_size" ] = wp_get_attachment_image( $thumb_id, $thumb_size );
+			}
+		
+		}
+		
+		// custom taxonomies
 		$taxonomies = apply_filters( 'sitewide_tags_custom_taxonomies', array() );
 		if ( ! empty( $taxonomies ) && 'publish' == $post->post_status ) {
 			$registered_tax = array_diff( get_taxonomies(), array( 'post_tag', 'category', 'link_category', 'nav_menu' ) );
@@ -443,9 +463,9 @@ class WDS_Multisite_Aggregate {
 	public function save_meta_fields( $post_id, $post, $meta_to_sync ) {
 		$updated = array();
 		if ( $this->options->get( 'tags_blog_thumbs' ) && !empty( $meta_to_sync[ 'thumbnail_url' ] ) ) {
-		    $this->set_thumbnail_by_url( $meta_to_sync[ 'thumbnail_url' ], $post_id );
-		    unset( $meta_to_sync[ 'thumbnail_url' ]);
-        }
+			$this->set_thumbnail_by_url( $meta_to_sync[ 'thumbnail_url' ], $post_id );
+			unset( $meta_to_sync[ 'thumbnail_url' ]);
+		}
 		foreach ( (array) $meta_to_sync as $key => $value ) {
 			if ( $value ) {
 				$updated[ $key ] = add_post_meta( $post_id, $key, $value );
