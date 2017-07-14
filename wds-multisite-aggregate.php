@@ -309,8 +309,8 @@ class WDS_Multisite_Aggregate {
 
 		$this->meta_to_sync['permalink'] = get_permalink( $post_id );
 		$this->meta_to_sync['blogid'] = $post_blog_id; // org_blog_id
-
-        // Post thumbnail
+		
+		// Post thumbnail
 		if ( $this->options->get( 'tags_blog_thumbs' ) && ( $thumb_id = get_post_thumbnail_id( $post->ID ) ) ) {
 			
 			// URL for later import in aggregating blog
